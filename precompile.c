@@ -26,9 +26,10 @@ int precompile(int line_length,FILE *input_file){
     FILE *output_file;
     char line[MAX_WORD_SIZE];
     char first_word[MAX_WORD_SIZE];
-    mcr_name *head_mcr = NULL;
-    mcr_name *curent_mcr = NULL;
-    command_list *curent_cmd = NULL;
+    mcr_name *head_mcr = NULL; /*An empty pointer to the first MACRO node*/
+    mcr_name *curent_mcr = NULL; /*An empty pointer to track curent MACRO node*/
+    command_list *curent_cmd = NULL; /*Same as curent_mcr but for command notes*/
+    int hit = 0; /*MACRO name replace flag*/
 
     /*Make an output file*/
     output_file = fopen("output.txt", "w");
@@ -40,7 +41,9 @@ int precompile(int line_length,FILE *input_file){
 
     while (fgets(line, sizeof(line), input_file)){ /*Read all the file,line by line */
         sscanf(line, "%s", first_word); /*Read the first word*/
+        /*printf("%s",line);*/
         if (strcmp(first_word, "mcr") == 0) {
+            hit=1; /*To make shure we dont wrigth the endmcrr */
             if (head_mcr == NULL){ /*If the head of the list is empty, make him*/
                 head_mcr = make_mcr();
                 curent_mcr = head_mcr;
@@ -59,39 +62,49 @@ int precompile(int line_length,FILE *input_file){
             sscanf(line, "%s", first_word);/*Get the first word in the line*/
 
 
-            while (strcmp(first_word,"endmcr")){    /*Go line by line, till you meet endmcr*/ 
+            while (strcmp(first_word,"endmcr")!=0){    /*Go line by line, till you meet endmcr*/ 
                 if(curent_mcr->first_command== NULL){ /*Check if this Node has any commands*/
                     curent_mcr->first_command = make_cmd();/*Make new empty command in curent MACRO node (this is the Head)*/
                     curent_cmd = curent_mcr->first_command; /*Make this curent command*/
-                    strcpy(curent_cmd->data, line);
-                    printf("%s:\t%s\n",curent_mcr->name, curent_cmd->data); /*Put he data in the first node*/
+                    strcpy(curent_cmd->data, line); /*Put he data in the first node*/
                 }
                 else{
-                    printf("\t%s\n", curent_cmd->data);
                     curent_cmd->next = make_cmd();
                     curent_cmd = curent_cmd->next;
                     strcpy(curent_cmd->data, line);
                 }
-                fgets(line, sizeof(line), input_file);
-                sscanf(line, "%s", first_word);
+                fgets(line, sizeof(line), input_file);/*Go to the next line*/
+                sscanf(line, "%s", first_word);/*Take the first line word*/
             }
-
-
         } 
-        else {
+        
+        else if(head_mcr!=NULL){
+            curent_mcr = head_mcr;
+            /*printf("Got in while of %s\n", curent_mcr->name);*/
+            while(curent_mcr!=NULL){
+                printf("Name: %s\n",first_word);
+                if(strcmp(first_word,curent_mcr->name)==0){ /*If this line is one of the MACRO names*/
+                    curent_cmd=curent_mcr->first_command;/*Put the pointer to the first command of this MACRO node*/
+                    /*printf("Hit on %s macro and %s\n",curent_mcr->name,first_word);*/
+                    hit = 1;
+                    fgets(line, sizeof(line), input_file); /*Delite the name Macro name from the file*/
+                    while (curent_cmd!=NULL)/*Go thrue all of the nodes in this MACRO name*/
+                    {  
+                       fputs(curent_cmd->data, output_file);/*Add this line to the outpute file*/
+                       curent_cmd = curent_cmd->next;/*GO to next command node*/
+                    }
+                    curent_mcr = NULL;
+                }   
+                else
+                curent_mcr=curent_mcr->next;
+            }
+        }
+        if(!hit){
             fputs(line, output_file);
         }
-         
-    }
-    
-    printf("The list of MACROS:\n");
-    while(head_mcr!=NULL){
-        printf("%s :",head_mcr->name);
-        while(head_mcr->first_command!=NULL){
-            printf("\t %s\n", head_mcr->first_command->data);
-            head_mcr->first_command = head_mcr->first_command->next;
-        }
-        head_mcr = head_mcr->next;
+        hit=0;
+          printf("Out of loop\n");
+        /*fgets(line, sizeof(line), input_file);*/
     }
     /*printf("output.txt has been made");*/
     fclose(output_file);
