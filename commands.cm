@@ -1,0 +1,16 @@
+0000 mov
+0001 cmp
+0010 add
+0011 sub
+0100 not
+0101 clr
+0110 lea
+0111 inc
+1000 dec
+1001 jmp
+1010 bne
+1011 red
+1100 prn
+1101 jsr
+1110 rts
+1111 hlt

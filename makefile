@@ -1,6 +1,6 @@
 FLAGS = gcc -Wall -pedantic -ansi
 TARGET = myprog
-SCRS = precompile.c transleter.c main.c validationCheck.c 
+SCRS = precompile.c transleter.c main.c validationCheck.c binaryWrite.c first_compile.c
 OBJS = $(SCRS:.c=.o)
 HDRS = header.h
 
@@ -10,4 +10,4 @@ $(TARGET): $(OBJS)
 	$(FLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o myprog output.txt
+	rm -f *.o myprog *.ext *.bin
