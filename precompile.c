@@ -18,37 +18,43 @@ typedef struct mcr_name{ /*linked node of MACROS*/
 
 mcr_name* make_mcr(); /*Make new empty MACRO node function*/
 command_list* make_cmd(); /*Make new empty command node function*/
+void clear_maloc(mcr_name *head_mcr);
   
 /*------------------Compile Function------------------- */
 
-int precompile(int line_length,FILE *input_file){
+FILE* precompile(FILE *input_file,char *file_name){
     
     FILE *output_file;
     char line[MAX_WORD_SIZE];
     char first_word[MAX_WORD_SIZE];
+    char *extension_pos;
     mcr_name *head_mcr = NULL; /*An empty pointer to the first MACRO node*/
     mcr_name *curent_mcr = NULL; /*An empty pointer to track curent MACRO node*/
+    mcr_name *temp_mcr = NULL; /*An empty pointer to track curent MACRO node*/
     command_list *curent_cmd = NULL; /*Same as curent_mcr but for command notes*/
     int hit = 0; /*MACRO name replace flag*/
 
     /*Make an output file*/
-    output_file = fopen("output.txt", "w");
+    extension_pos = strrchr(file_name, '.');
+    if (extension_pos != NULL) {
+        *extension_pos = '\0';
+    }
+    file_name = strcat(file_name, ".ext");
+    output_file = fopen(file_name, "w");
     if (output_file == NULL) {
         perror("Error opening output file");
-        return 1;
+        return NULL;
     }
 
 
     while (fgets(line, sizeof(line), input_file)){ /*Read all the file,line by line */
         sscanf(line, "%s", first_word); /*Read the first word*/
-        /*printf("%s",line);*/
         if (strcmp(first_word, "mcr") == 0) {
             hit=1; /*To make shure we dont wrigth the endmcrr */
             if (head_mcr == NULL){ /*If the head of the list is empty, make him*/
                 head_mcr = make_mcr();
                 curent_mcr = head_mcr;
                 sscanf(line, "%*s %s", head_mcr->name); /*put the SECOND word, which is the name, in name feald*/
-                /*printf("First hit %s\n",head_mcr->name);*/
                 fgets(line, sizeof(line), input_file); /*go to next line*/
             }
             else{ /*add macro node ot the end of the linked nodes*/
@@ -79,36 +85,35 @@ int precompile(int line_length,FILE *input_file){
         } 
         
         else if(head_mcr!=NULL){
-            curent_mcr = head_mcr;
+            temp_mcr = head_mcr;
             /*printf("Got in while of %s\n", curent_mcr->name);*/
-            while(curent_mcr!=NULL){
-                printf("Name: %s\n",first_word);
-                if(strcmp(first_word,curent_mcr->name)==0){ /*If this line is one of the MACRO names*/
-                    curent_cmd=curent_mcr->first_command;/*Put the pointer to the first command of this MACRO node*/
+            while(temp_mcr!=NULL){
+                /*printf("Name: %s\n",first_word);*/
+                if(strcmp(first_word,temp_mcr->name)==0){ /*If this line is one of the MACRO names*/
+                    curent_cmd=temp_mcr->first_command;/*Put the pointer to the first command of this MACRO node*/
                     /*printf("Hit on %s macro and %s\n",curent_mcr->name,first_word);*/
-                    hit = 1;
                     fgets(line, sizeof(line), input_file); /*Delite the name Macro name from the file*/
                     while (curent_cmd!=NULL)/*Go thrue all of the nodes in this MACRO name*/
                     {  
                        fputs(curent_cmd->data, output_file);/*Add this line to the outpute file*/
                        curent_cmd = curent_cmd->next;/*GO to next command node*/
                     }
-                    curent_mcr = NULL;
+                    temp_mcr = NULL;
                 }   
                 else
-                curent_mcr=curent_mcr->next;
+                temp_mcr=temp_mcr->next;
             }
         }
         if(!hit){
             fputs(line, output_file);
         }
         hit=0;
-          printf("Out of loop\n");
-        /*fgets(line, sizeof(line), input_file);*/
     }
     /*printf("output.txt has been made");*/
-    fclose(output_file);
-    return 0;
+    clear_maloc(head_mcr); /*Clear the memory trash*/
+    fclose(output_file); /*Close the file, so he will be created*/
+    output_file = fopen(file_name, "r"); /*Open him again, to send the point*/
+    return output_file;
 }
 
 mcr_name* make_mcr(){
@@ -134,4 +139,24 @@ command_list* make_cmd(){
     command->data = malloc(MAX_WORD_SIZE * sizeof(char));
     command->next = NULL;
     return command;
+}
+
+void clear_maloc(mcr_name *head_mcr) {
+    mcr_name *temp_mcr;
+    command_list *temp_cmd;
+
+    while (head_mcr != NULL) {
+        temp_mcr = head_mcr;
+        head_mcr = head_mcr->next;
+
+        while (temp_mcr->first_command != NULL) {
+            temp_cmd = temp_mcr->first_command;
+            temp_mcr->first_command = temp_mcr->first_command->next;
+            free(temp_cmd->data);
+            free(temp_cmd);
+        }
+
+        free(temp_mcr->name);
+        free(temp_mcr);
+    }
 }
