@@ -30,6 +30,7 @@ int command_type(char* line){
     
 }
 
+
 int isNumber(char *str) {
     if (str == NULL || *str == '\0') 
         return 1; 

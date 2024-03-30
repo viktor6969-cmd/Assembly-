@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
 
     /*first_values_read(macro_file);*/
 
-    sort_commands(macro_file);
+    first_read(macro_file);
 
    /*compile_to_binary(macro_file);*/
     return 0;

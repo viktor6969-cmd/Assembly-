@@ -1,6 +1,6 @@
 prn #-5
  cmp r3, #sz
 sub r1, r4
-.define gaylord
+.define gaylord=69
 ;sdfgfdsgsdfgfds
-GJKBKH .define
+.define a = 45

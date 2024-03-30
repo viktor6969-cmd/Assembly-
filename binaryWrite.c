@@ -6,48 +6,44 @@
 #define COMMAND_LIST_SIZE 16
 #define MAX_LINE_SIZE 80
 #define MAX_COMMAND_LINE_SIZE 14*3
-#define FIRST_DIGITS "0000"
 
 /*-------------STRUCTERS----------------*/
-typedef struct commands{
+typedef struct labels{
     char* name;
-    char* binary_code;
-}commands;
+    struct labels* next;
+}labels;
 
 /*------------DECLARATIONS--------------*/
-commands* make_command_list();
-char* find_varable(char* variable_name);
-void num_to_binary(char* num, char* binary_comand);
-void imidiat_sort(char* binary_command, char* list);
-void make_binary_comand(char* list,commands *command,char* com);
+int is_prog(char* line,FILE* output_data_file);
+int is_decloration(char* line,FILE* output_file);
+int add_label(char* line,FILE* output_data_file);
 
-
-int is_defenition(char* line,char* command);
-int is_label(char* line,char* command);
-int is_command(char* line,char* command);
 
 /*----------GLOBAL VARIABLES------------*/
+labels *labels_list_curent = NULL;
+labels *labels_list_head = NULL;
+labels *labels_temp;
 char first_word[MAX_LINE_SIZE];
 char second_word[MAX_LINE_SIZE];
-commands *command_list;
-int i;
+int row_counter;
 
 
-/*-------------FUNCTIONS----------------*/
-void sort_commands(FILE* input_file){
- 
-    FILE *output_file;
+void first_read(FILE* input_file){
+    FILE *output_binary_file;
+    FILE *output_data_file;
     char line[MAX_LINE_SIZE];
     char first_word[MAX_LINE_SIZE];
-    char binary_command[MAX_COMMAND_LINE_SIZE];
-    int (*functions[3])(char*,char*) = { is_defenition, is_command, is_label};
-   
+    /*char binary_command[MAX_COMMAND_LINE_SIZE];*/
+    row_counter = 100;
 
-    binary_command[0] = '\0'; /*Remuve random gabige*/
-    command_list = make_command_list(); /*Make the command list from commands.txt*/
-    output_file = fopen("binary.bin", "w"); /*Open the output file to  write*/
-    if (output_file == NULL) {
+    output_binary_file = fopen("binary.bin", "w"); /*Open the output file to  write*/
+    if (output_binary_file == NULL) {
         perror("Error creating binary.txt file");
+    }
+
+    output_data_file = fopen("data.bin", "w"); /*Open the output file to  write*/
+    if (output_data_file == NULL) {
+        perror("Error creating table file");
     }
 
     while (fgets(line, sizeof(line), input_file)){ /*Go thrue the file, line by line*/
@@ -56,178 +52,75 @@ void sort_commands(FILE* input_file){
         if(line[0] == ';')/*Skip if it's a comment line*/
             continue;
 
-        for (i = 0; i < 3; i++) { /*Check the type of the command*/
-            if (functions[i](line,binary_command)) {
-                break; 
-            }
+        if((first_word[strlen(first_word)-1]) == ':'){ /*If the first word ends with ':' its a label*/
+ 
+            add_label(line,output_data_file);
         }
 
-        if(binary_command[0]=='\0'){/*If this is not any valid command, send an error massage*/
-            printf("\033[1;31m"); 
-            printf("Invalid line: %s\n", line);
-            printf("\033[0m"); 
-        }
+        if(is_decloration(line,output_data_file))
+            continue;   
 
-        else{
-            fputs(binary_command,output_file);
-            binary_command[0] = '\0';
-        }
-
-        i = 0;
+        fprintf(output_binary_file, "%04d 0000\n", row_counter++);
     }
     
-    fclose(output_file);
+    fclose(output_binary_file);
+    fclose(output_data_file);
 }
 
-void compile_to_binary(FILE *input_file){
+int is_decloration(char* line,FILE* output_data_file){
     
-    FILE *output_file;
-    char line[MAX_LINE_SIZE];
-    char first_word[MAX_LINE_SIZE];
-    char binary_command[MAX_COMMAND_LINE_SIZE];
-    int i;
-    commands *command_list;
-    
-    binary_command[0] = '\0'; /*To clean the garbige values*/ 
-    command_list = make_command_list();
-    output_file = fopen("binary.bin", "w");
-    if (output_file == NULL) {
-        perror("Error creating binary.txt file");
-    }
-
-    while (fgets(line, sizeof(line), input_file)){ /*Go thrue the file, line by line*/
-        sscanf(line, "%s", first_word); /*Read the first word*/   
-        if(strcmp(first_word,";")==0){
-            continue;
-        }
-
-        for(i=0;i<COMMAND_LIST_SIZE;i++){
-            if(strcmp(first_word,(command_list+i)->name)==0){
-                sscanf(line, "%*s%[^\n]",line); /*Remove the first vord from the command string*/
-                make_binary_comand(line,(command_list+i),binary_command);
-                break;
-            }
-        }
-        fputs(binary_command,output_file);
-        binary_command[0] = '\0';
-    }
-}
-
-commands* make_command_list(){ /*Make space for new command list*/
-    int i;
-    FILE *commands_file;
-    char line[MAX_LINE_SIZE];
-    commands* list = malloc(COMMAND_LIST_SIZE * sizeof(commands)); 
-    if (list == NULL) {
-        printf("Error allocating memory for command list");
-        exit(EXIT_FAILURE);
-    }
-    commands_file = fopen("commands.cm", "r");
-    if (commands_file == NULL) {
-        printf("Error opening the commands.txt file");
-        exit(EXIT_FAILURE);
-    }
-
-    for (i = 0; i < COMMAND_LIST_SIZE; i++) {
-
-        fgets(line, sizeof(line), commands_file);
-        list[i].binary_code = malloc(4 * sizeof(char));
-        list[i].name = malloc(MAX_LINE_SIZE * sizeof(char));
-        if (list[i].binary_code == NULL || list[i].name == NULL) {
-            printf("Error allocating memory for binary code or name");
-            exit(EXIT_FAILURE);
-        }
-        sscanf(line, "%s %s", list[i].binary_code, list[i].name);
-    }
-    fclose(commands_file);
-    return list;
-} 
-
-
-
-
-void make_binary_comand(char* list,commands *command,char* binary_command){
-    strcpy(binary_command,FIRST_DIGITS); /*Add the 0000 to the begining*/
-    strcat(binary_command,command->binary_code); /*Add the OPCODE*/
-    if(list[1] == '#'){ /*If the first operant is #, we have an ImidiateSort*/
-        strcat(binary_command,"00"); /*Put 00 as the first operant*/
-        imidiat_sort(binary_command,list+2); /*send the rest of the command, without the # char*/
-    }
-    strcat(binary_command,"\n");
-}
-
-void imidiat_sort(char* binary_command, char* list){
-
-    char first_operand[MAX_LINE_SIZE];
-    char second_operand[MAX_LINE_SIZE];
-    printf("enter on %s\n",list);
-    sscanf(list, "%[^,]",first_operand); /*The first operand after the # and before the ',' (if exist)*/
-    sscanf(list, "%*[^,],%s",second_operand);/*The second operand, after the ','*/
-
-    if(second_operand[0] == '\0') /*If there is only one operant*/
-        strcat(binary_command,"0000\n"); /*Add the rest of the code, 00 for second operand, 00 for ARE, and a new line for the number*/
-    else
-        strcat(binary_command,"2200\n");
-
-    if(isNumber(first_operand)) /*function exist in validationCheck.c file*/
-            num_to_binary(first_operand,binary_command); /*if this is a number, put him as a binary line*/
-        else
-            num_to_binary(find_varable(first_operand),binary_command);/*if this is a variable, find his value*/
-    
-    if(isNumber(second_operand)) /*function exist in validationCheck.c file*/
-            num_to_binary(second_operand,binary_command); /*if this is a number, put him as a binary line*/
-        else
-            num_to_binary(find_varable(second_operand),binary_command);/*if this is a variable, find his value*/
-}
-    
-void num_to_binary(char* num, char* binary_command){
-    strcat(binary_command,num);
-}
-
-char* find_varable(char* variable_name){
-    return variable_name;
-}
-
-int is_defenition(char* line,char* command){
     sscanf(line, "%s", first_word); /*take the first word of the line*/
-    sscanf(line, "%*s %s", second_word);/*Take the second word of the line*/
 
-    if((strcmp(first_word,".define")==0)||(strcmp(second_word,".define")==0)){
-        strcat(command,line);
+    if((strcmp(first_word,".define")==0)){/*if its a define command*/
+        sscanf(line, "%*[^ ] %[^=]", first_word);/*Scan the first word before the = char, (the variable name)*/
+        sscanf(line, "%*[^=]=%s", second_word); /*Scan the first word after the = char, (the variable value)*/
+        /*Add validation check*/
+        fprintf(output_data_file, "%s %s\n", first_word, second_word); /*Put the value to the DATA table*/
         return 1;
     }
 
     if(strcmp(first_word,".string")==0){
-        strcat(command,line);
         return 1;
     }
 
     if(strcmp(first_word,".entry")==0){
-        strcat(command,line);
         return 1;
     }
 
     if(strcmp(first_word,".extern")==0){
-        strcat(command,line);
+        return 1;
+    }
+
+    if(strcmp(first_word,".data")==0){
         return 1;
     }
     return 0;
 }
 
-int is_label(char* line,char* command){
-
-    return 1;
+int is_prog(char* line,FILE* output_data_file){
+    return 0;
 }
 
-int is_command(char* line,char* command){
+int add_label(char* line,FILE* output_data_file){
 
-    sscanf(line, "%s", first_word); /*Read the first word*/   
-
-        for(i=0;i<COMMAND_LIST_SIZE;i++){
-            if(strcmp(first_word,(command_list+i)->name)==0){
-                strcat(command,line);
-                return 1;
-            }
+    sscanf(line, "%s", first_word);
+    first_word[strlen(first_word) - 1] = '\0'; /*The label name, without the ':' char*/
+    printf("The first word %s\n",first_word);
+    labels_temp = labels_list_head;
+    while (labels_temp != NULL) {
+        if (strcmp(first_word, labels_temp->name) == 0) {
+            /*print_error(first_word);*/
+            return 1;
         }
+        labels_temp = labels_temp->next;
+    }
+
+    labels_temp = malloc(sizeof(labels)); /*Allocate memory for the new label*/
+    labels_temp->name = malloc(strlen(first_word) + 1); /*Allocate memory for the label name*/
+    strcpy(labels_temp->name, first_word); /*Copy the label name*/
+    labels_temp->next = labels_list_head; /*Set the next pointer to the current head*/
+    labels_list_head = labels_temp; /*Set the new label as the head of the list*/
+
+    fprintf(output_data_file, "%s %d\n", first_word, row_counter); /*Add the label name, and the row to data output file*/
     return 0;
 }

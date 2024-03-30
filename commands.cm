@@ -1,16 +1,16 @@
-0000 mov
-0001 cmp
-0010 add
-0011 sub
-0100 not
-0101 clr
-0110 lea
-0111 inc
-1000 dec
-1001 jmp
-1010 bne
-1011 red
-1100 prn
-1101 jsr
-1110 rts
-1111 hlt
+0000 mov 2 
+0001 cmp 2
+0010 add 2
+0011 sub 2
+0100 not 2
+0101 clr 2
+0110 lea 2
+0111 inc 2
+1000 dec 2
+1001 jmp 1
+1010 bne 1
+1011 red 1
+1100 prn 1
+1101 jsr 1
+1110 rts 0
+1111 hlt 0
