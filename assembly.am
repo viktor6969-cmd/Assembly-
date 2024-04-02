@@ -6,6 +6,7 @@ LOOP: jmp L1
  sub r1, r4
 cmp r3, #sz
  bne END
+.extern GAY
 L1: inc K
  bne LOOP
 END: hlt

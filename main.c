@@ -15,7 +15,7 @@ int main(int argc, char *argv[]){
         mac = open_macros(argv[i]);/*Precompile function, returns 1 if file.am was made*/
 
         /*first_values_read(macro_file);*/
-        /*first_read(argv[i]);*/
+        first_read(argv[i],mac);
     }
    /*compile_to_binary(macro_file);*/
     return 0;

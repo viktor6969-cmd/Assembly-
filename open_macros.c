@@ -119,9 +119,11 @@ int open_macros(char *input_file_string){
     /*printf("output.txt has been made");*/
   
     fclose(output_file); /*Close the file, so he will be created*/
-    printf("%s",file_name);
-    if(head_mcr == NULL) /*If there was no macros, delite the file*/
+    if(head_mcr == NULL){ /*If there was no macros, delite the file*/
         remove(file_name);
+        clear_maloc(head_mcr);
+        return 0;
+    }
     clear_maloc(head_mcr); /*Clear the memory trash*/
     return 1;
 }
