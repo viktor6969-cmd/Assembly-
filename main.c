@@ -3,22 +3,20 @@
 
 #define MAX_LINE_LENGTH 80
 int main(int argc, char *argv[]){
-    FILE *input_file;
-    FILE *macro_file;
-    input_file = fopen(argv[1], "r");
+
+    int i;
+    int mac;
+
 
     if(InputValidCheck(argc,argv)) /*Check if the file exist and accessble*/
         return 1;
 
-    if((macro_file = precompile(input_file,argv[1]))==NULL){ /*Precompile*/
-        printf("Error to access the post compile file");
-        return 1;
-    }    
+    for(i=1;i<argc;i++){
+        mac = open_macros(argv[i]);/*Precompile function, returns 1 if file.am was made*/
 
-    /*first_values_read(macro_file);*/
-
-    first_read(macro_file);
-
+        /*first_values_read(macro_file);*/
+        /*first_read(argv[i]);*/
+    }
    /*compile_to_binary(macro_file);*/
     return 0;
 }

@@ -1,23 +1,28 @@
 #include "stdio.h"
+#include <string.h>
 #include "header.h"
 
-#define MAX_LINE_SIZE 80
+#define MAX_LINE_SIZE 81
 #define MAX_COMMAND_LINE_SIZE 14*3
+FILE *file;
+char file_name[MAX_COMMAND_LINE_SIZE];
+int i;
 
 int InputValidCheck(int argc, char *argv[]){
     if (argc < 2){
-        printf("The text file is missing");
+        print_error("The text file is missing");
         return 1;
     }
+    
+   for(i=1;i<argc;i++){
 
-    while (argv[1] != 0){
-        FILE *file = fopen(argv[1], "r");
+        sprintf(file_name,"%s.as",argv[i]);
+        file = fopen(file_name, "r");
         if (file == NULL) {
-            printf("Failed to open file %s\n", argv[1]);
+            printf("\x1b[31mFailed to open file %s\x1b[0m\n", file_name);
             return 1;
         }
         fclose(file);
-        argv++;
     }
     return 0;
 }
@@ -30,6 +35,9 @@ int command_type(char* line){
     
 }
 
+void print_error(char* error){
+    printf("\x1b[31m%s \x1b[0m",error);
+}
 
 int isNumber(char *str) {
     if (str == NULL || *str == '\0') 

@@ -3,8 +3,9 @@
 #include <string.h>
 #include "header.h"
 
-#define MAX_WORD_SIZE 78
+#define MAX_WORD_SIZE 81
 
+/*-------------------STRUCTURES-------------------------*/
 typedef struct command_list{ /*Linked node of commands*/
     char *data;
     struct command_list *next;
@@ -16,34 +17,40 @@ typedef struct mcr_name{ /*linked node of MACROS*/
     struct mcr_name *next;
     }mcr_name ;
 
+
+
+
+/*--------------FUNCTIONS Declarations------------------*/
 mcr_name* make_mcr(); /*Make new empty MACRO node function*/
 command_list* make_cmd(); /*Make new empty command node function*/
-void clear_maloc(mcr_name *head_mcr);
-  
-/*------------------Compile Function------------------- */
+void clear_maloc(mcr_name *head_mcr); /*Clears the memory alocated to all the dinamik variables*/
 
-FILE* precompile(FILE *input_file,char *file_name){
+
+/*------------------Compile Function------------------- */
+int open_macros(char *input_file_string){
     
+    FILE *input_file;
     FILE *output_file;
     char line[MAX_WORD_SIZE];
     char first_word[MAX_WORD_SIZE];
-    char *extension_pos;
+    char file_name[MAX_WORD_SIZE];
     mcr_name *head_mcr = NULL; /*An empty pointer to the first MACRO node*/
     mcr_name *curent_mcr = NULL; /*An empty pointer to track curent MACRO node*/
     mcr_name *temp_mcr = NULL; /*An empty pointer to track curent MACRO node*/
     command_list *curent_cmd = NULL; /*Same as curent_mcr but for command notes*/
     int hit = 0; /*MACRO name replace flag*/
 
+    /*Open the file*/
+    
+    sprintf(file_name,"%s.as",input_file_string);
+    input_file = fopen(file_name,"r");
+
     /*Make an output file*/
-    extension_pos = strrchr(file_name, '.');
-    if (extension_pos != NULL) {
-        *extension_pos = '\0';
-    }
-    file_name = strcat(file_name, ".ext");
+    sprintf(file_name,"%s.am",input_file_string);
     output_file = fopen(file_name, "w");
     if (output_file == NULL) {
-        perror("Error opening output file");
-        return NULL;
+        printf("Error making the %s file",input_file_string);
+        return 2;
     }
 
 
@@ -110,10 +117,13 @@ FILE* precompile(FILE *input_file,char *file_name){
         hit=0;
     }
     /*printf("output.txt has been made");*/
-    clear_maloc(head_mcr); /*Clear the memory trash*/
+  
     fclose(output_file); /*Close the file, so he will be created*/
-    output_file = fopen(file_name, "r"); /*Open him again, to send the point*/
-    return output_file;
+    printf("%s",file_name);
+    if(head_mcr == NULL) /*If there was no macros, delite the file*/
+        remove(file_name);
+    clear_maloc(head_mcr); /*Clear the memory trash*/
+    return 1;
 }
 
 mcr_name* make_mcr(){

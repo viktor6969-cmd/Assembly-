@@ -10,4 +10,4 @@ $(TARGET): $(OBJS)
 	$(FLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o myprog *.ext *.bin
+	rm -f *.o myprog *.am *.bin
