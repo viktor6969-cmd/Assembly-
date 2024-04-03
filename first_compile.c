@@ -17,6 +17,7 @@ typedef struct labels{
 }labels;
 
 /*------------DECLARATIONS--------------*/
+void label_data_write(char* line,FILE* output_file);
 int is_prog(char* line,FILE* output_data_file);
 int is_decloration(char* line, char* file_name);
 int add_label(char* line);
@@ -45,7 +46,7 @@ int first_read(char* input_file_name, int mcr){
     FILE *output_binary_file;
     char line[MAX_LINE_SIZE];
     char first_word[MAX_LINE_SIZE];
-    IC = 0;
+    IC = 100;
     DC = 0;
 
     if(mcr) /*Check if there is a macro file, if yes set the name to .am file*/
@@ -64,10 +65,9 @@ int first_read(char* input_file_name, int mcr){
     while (fgets(line, sizeof(line), input_file)){ /*Go thrue the file, line by line*/
         
         sscanf(line, "%s", first_word); /*Read the first word*/  
-
         if(line[0] == ';')/*Skip if it's a comment line*/
             continue;
-
+/*---------------Check is decloration------------------------------*/
         switch(is_decloration(line,input_file_name)){/*Check if the command is of decloration type*/
             case -1: /*If it's a decloration, and the name is already exist in the data list, return error*/
                 return 1;
@@ -82,32 +82,60 @@ int first_read(char* input_file_name, int mcr){
           sscanf(line, "%s", first_word);
 
         if((first_word[strlen(first_word)-1]) == ':'){ /*If the first word ends with ':' its a label*/
+            
             first_word[strlen(first_word) - 1] = '\0'; /*Remove the ':' char*/
-            if(in_data_list(first_word)){
+            if(in_data_list(first_word)){ /*Check if the Label exist in the Data table*/
                 printf("ERROR: The Label \"%s\" defined more then once",first_word);
                 return 1;
             }
-
             else{
-
+                /*If the label is new, check validation and add him*/
+                if(strlen(first_word)>MAX_LABEL_NAME_SIZE){ /*Check the size of the label*/
+                    printf("The label name:%s is too long",line);
+                    return 1;
+                }
                 labels_temp = new_label(); /*Make new label*/
-                strcat(labels_temp->name,first_word);
-                strcat(labels_temp->type,"code");
-                sprintf(labels_temp->data, "%d",IC++);
-                if(labels_list_head == NULL){
+                strcat(labels_temp->name,first_word); /*Add label name to datat tabel*/
+                sscanf(line, "%*s %[^\n]", line); /*Remove the name of the label*/
+                sscanf(line, "%s", first_word);  /*read the first (next) word*/
+
+                if((strcmp(first_word,".data")==0)||((strcmp(first_word,".string")==0))){/*If the first word it's data definition*/
+                    strcat(labels_temp->type,"data");
+                    sprintf(labels_temp->data, "%d",IC);
+                    label_data_write(line,output_binary_file);
+                }
+                
+                else{
+                strcat(labels_temp->type,"code"); /*Add type code*/
+                sprintf(labels_temp->data, "%d",IC); /*Add the line, and increase it*/
+                fprintf(output_binary_file, "%d 0000%s\n", IC++,labels_temp->name);
+                }
+                
+                if(labels_list_head == NULL){ /*If theis is the first Label in the file, make new head*/
                     labels_list_head = labels_temp;
                     labels_list_curent = labels_temp;
                 }
-                else{
+                else{ /*If the head exist, just add him to the linked nodes*/
                     labels_list_curent->next = labels_temp;
                     labels_list_curent = labels_temp; 
-                }  
+                }
+                continue;
             }
         }
-        fprintf(output_binary_file, "%d 0000\n", IC++);
+        fprintf(output_binary_file, "%d 0000%s\n", IC++,first_word);
     }
+    labels_temp = labels_list_head;
+    /*while(labels_temp!=NULL){
+        printf("%s\t%s\t%s\n",labels_temp->name,labels_temp->type,labels_temp->data);
+        labels_temp = labels_temp->next;
+    }*/
     fclose(output_binary_file);
     return 0;
+}
+
+void label_data_write(char* line,FILE* output_file){
+    
+    fprintf(output_file, "%d\t%s\n",IC++,first_word);
 }
 
 int is_decloration(char* line, char* input_file_name){
@@ -115,6 +143,7 @@ int is_decloration(char* line, char* input_file_name){
     sscanf(line, "%s", first_word); /*take the first word of the line*/
     if((strcmp(first_word,".define")==0)){/*if its a define command*/
         sscanf(line, "%*s %[^= ]", first_word);/*Scan the first word before the = char, (the variable name)*/
+    /*-----------Is the name exist already--------------*/    
         if(!in_data_list(first_word)){
             labels_temp = new_label(); /*Make new label*/
             sscanf(line, "%*[^=]=%s", second_word); /*Scan the first word after the = char, (the variable value)*/
