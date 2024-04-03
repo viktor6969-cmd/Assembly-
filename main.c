@@ -7,7 +7,7 @@ int main(int argc, char *argv[]){
     int i;
     int mac;
 
-
+    printf("\x1b[31m");
     if(InputValidCheck(argc,argv)) /*Check if the file exist and accessble*/
         return 1;
 

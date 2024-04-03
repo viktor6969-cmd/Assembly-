@@ -1,4 +1,4 @@
-.define sz = 2
+.define sz  = 2
 MAIN: mov r3, LIST[sz]
 LOOP: jmp L1
  prn #-5
@@ -7,6 +7,7 @@ LOOP: jmp L1
 cmp r3, #sz
  bne END
 .extern GAY
+.extern GAY2
 L1: inc K
  bne LOOP
 END: hlt
