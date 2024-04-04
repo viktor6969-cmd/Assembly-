@@ -6,9 +6,10 @@
 #define MAX_COMMAND_LINE_SIZE 14*3
 FILE *file;
 char file_name[MAX_COMMAND_LINE_SIZE];
-int i;
+
 
 int InputValidCheck(int argc, char *argv[]){
+    int i;
     if (argc < 2){
         print_error("The text file is missing");
         return 1;

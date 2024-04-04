@@ -18,9 +18,7 @@ typedef struct labels{
 
 /*------------DECLARATIONS--------------*/
 int label_data_write(char* line,FILE* output_file);
-int is_prog(char* line,FILE* output_data_file);
 int is_decloration(char* line, char* file_name);
-int add_label(char* line);
 int in_data_list(char* name);
 labels* new_label();
 
@@ -31,8 +29,6 @@ FILE* enter_file;
 labels *labels_list_curent = NULL;
 labels *labels_list_head = NULL;
 labels *labels_temp;
-
-
 char first_word[MAX_LINE_SIZE];
 char second_word[MAX_LINE_SIZE];
 char file_name_string[MAX_LINE_SIZE];
@@ -45,7 +41,6 @@ int first_read(char* input_file_name, int mcr){
     FILE *input_file;
     FILE *output_binary_file;
     char line[MAX_LINE_SIZE];
-    char first_word[MAX_LINE_SIZE];
     IC = 100;
     DC = 0;
 
@@ -129,7 +124,7 @@ int first_read(char* input_file_name, int mcr){
             }
         }
         else{
-            command_data_write(line,output_binary_file);
+            command_data_write(line,IC,output_binary_file);
             fprintf(output_binary_file, "%d\t0000%s\n", IC++,first_word);
         }
     }
@@ -188,8 +183,12 @@ int label_data_write(char* line,FILE* output_file){
         return 0;
     }
 
-    return command_data_write(line,output_file); /*If not data or string, send to the command sort function*/
+    return command_data_write(line,IC,output_file); /*If not data or string, send to the command sort function*/
 }  
+
+int define_command(char* line){
+    
+}
 
 int is_decloration(char* line, char* input_file_name){
 
@@ -241,34 +240,6 @@ int is_decloration(char* line, char* input_file_name){
         return 1;
     }
 
-    return 0;
-}
-
-int is_prog(char* line,FILE* output_data_file){
-    return 0;
-}
-
-int add_label(char* line){
-
-    sscanf(line, "%s", first_word);
-    first_word[strlen(first_word) - 1] = '\0'; /*The label name, without the ':' char*/
-    printf("The first word %s\n",first_word);
-    labels_temp = labels_list_head;
-    while (labels_temp != NULL) {
-        if (strcmp(first_word, labels_temp->name) == 0) {
-            /*print_error(first_word);*/
-            return 1;
-        }
-        labels_temp = labels_temp->next;
-    }
-
-    labels_temp = malloc(sizeof(labels)); /*Allocate memory for the new label*/
-    labels_temp->name = malloc(strlen(first_word) + 1); /*Allocate memory for the label name*/
-    strcpy(labels_temp->name, first_word); /*Copy the label name*/
-    labels_temp->next = labels_list_head; /*Set the next pointer to the current head*/
-    labels_list_head = labels_temp; /*Set the new label as the head of the list*/
-
-   /* fprintf(output_data_file, "%s %d\n", first_word, IC);*/ /*Add the label name, and the row to data output file*/
     return 0;
 }
 
