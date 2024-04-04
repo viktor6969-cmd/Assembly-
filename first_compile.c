@@ -17,7 +17,7 @@ typedef struct labels{
 }labels;
 
 /*------------DECLARATIONS--------------*/
-void label_data_write(char* line,FILE* output_file);
+int label_data_write(char* line,FILE* output_file);
 int is_prog(char* line,FILE* output_data_file);
 int is_decloration(char* line, char* file_name);
 int add_label(char* line);
@@ -62,12 +62,15 @@ int first_read(char* input_file_name, int mcr){
     if (output_binary_file == NULL) /*Check if the file have been crieted*/
         print_error("Error creating object file");
 
+/*--------------------Go line by line-------------------------------*/
+
+
     while (fgets(line, sizeof(line), input_file)){ /*Go thrue the file, line by line*/
         
         sscanf(line, "%s", first_word); /*Read the first word*/  
         if(line[0] == ';')/*Skip if it's a comment line*/
             continue;
-/*---------------Check is decloration------------------------------*/
+/*---------------Check if decloration------------------------------*/
         switch(is_decloration(line,input_file_name)){/*Check if the command is of decloration type*/
             case -1: /*If it's a decloration, and the name is already exist in the data list, return error*/
                 return 1;
@@ -78,9 +81,8 @@ int first_read(char* input_file_name, int mcr){
             default:
                 break;
         }
-        
-          sscanf(line, "%s", first_word);
-
+/*---------------Check if Label----------------------------------*/
+        sscanf(line, "%s", first_word);
         if((first_word[strlen(first_word)-1]) == ':'){ /*If the first word ends with ':' its a label*/
             
             first_word[strlen(first_word) - 1] = '\0'; /*Remove the ':' char*/
@@ -88,27 +90,27 @@ int first_read(char* input_file_name, int mcr){
                 printf("ERROR: The Label \"%s\" defined more then once",first_word);
                 return 1;
             }
-            else{
-                /*If the label is new, check validation and add him*/
+            else{ /*If the label is new, check validation and add him*/           
                 if(strlen(first_word)>MAX_LABEL_NAME_SIZE){ /*Check the size of the label*/
                     printf("The label name:%s is too long",line);
                     return 1;
                 }
                 labels_temp = new_label(); /*Make new label*/
                 strcat(labels_temp->name,first_word); /*Add label name to datat tabel*/
-                sscanf(line, "%*s %[^\n]", line); /*Remove the name of the label*/
+                sscanf(line, "%*s %[^\n]", line); /*Remove the name of the label from the line*/
                 sscanf(line, "%s", first_word);  /*read the first (next) word*/
 
-                if((strcmp(first_word,".data")==0)||((strcmp(first_word,".string")==0))){/*If the first word it's data definition*/
+                /*If the first word it's data definition*/
+                if((strcmp(first_word,".data")==0)||((strcmp(first_word,".string")==0))){
                     strcat(labels_temp->type,"data");
                     sprintf(labels_temp->data, "%d",IC);
-                    label_data_write(line,output_binary_file);
                 }
                 
+                /*If not, send it to code_line fonction*/
                 else{
-                strcat(labels_temp->type,"code"); /*Add type code*/
-                sprintf(labels_temp->data, "%d",IC); /*Add the line, and increase it*/
-                fprintf(output_binary_file, "%d 0000%s\n", IC++,labels_temp->name);
+                    strcat(labels_temp->type,"code"); /*Add type code*/
+                    sprintf(labels_temp->data, "%d",IC); /*Add the line, and increase it*/
+                    fprintf(output_binary_file, "%d\t0000%s\n", IC++,labels_temp->name);
                 }
                 
                 if(labels_list_head == NULL){ /*If theis is the first Label in the file, make new head*/
@@ -119,24 +121,75 @@ int first_read(char* input_file_name, int mcr){
                     labels_list_curent->next = labels_temp;
                     labels_list_curent = labels_temp; 
                 }
+                if(label_data_write(line,output_binary_file)==-1){
+                        printf("ERROR");
+                        return -1;
+                    }
                 continue;
             }
         }
-        fprintf(output_binary_file, "%d 0000%s\n", IC++,first_word);
+        else{
+            command_data_write(line,output_binary_file);
+            fprintf(output_binary_file, "%d\t0000%s\n", IC++,first_word);
+        }
     }
     labels_temp = labels_list_head;
-    /*while(labels_temp!=NULL){
+    printf("\n");
+
+    while(labels_temp!=NULL){
         printf("%s\t%s\t%s\n",labels_temp->name,labels_temp->type,labels_temp->data);
         labels_temp = labels_temp->next;
-    }*/
+    }
     fclose(output_binary_file);
+
     return 0;
 }
 
-void label_data_write(char* line,FILE* output_file){
+int label_data_write(char* line,FILE* output_file){
+    int pos;
+    sscanf(line, "%s", first_word);
+    /*--------------ADD STRING CHECK-------------------*/
+    if(strcmp(first_word,".string")==0){ /*If String deffination: Write down each char in aski*/
+        for(pos = 11;pos<(strlen(line)-3);pos++)     
+            fprintf(output_file, "%d\t%c\n", IC++,line[pos]);
+        fprintf(output_file, "%d\t00000000000000\n", IC++); /*Add the \0 (end of file)*/
+        return 0;
+    }
+
+    else if(strcmp(first_word,".data")==0){ /*If data defination: Check validation, replace names of varibels, and write it to the output file*/
+        strcpy(first_word,"");
+
+        for(pos = 6;pos<strlen(line);pos++){
     
-    fprintf(output_file, "%d\t%s\n",IC++,first_word);
-}
+            if((line[pos]==' ')||(line[pos]=='+'))
+                continue;
+
+            if((line[pos])==','){
+
+                if(line[pos-1]==','){
+                    printf("ERROR in line %s: \nDubble \",\" char in data declaration",line);
+                    return -1;
+                }
+                else if((pos+1) == strlen(line)){
+                    printf("ERROR in line \"%s\": \n Missing argument after \',\' in data declaration",line);
+                    return -1;
+                }
+                if(in_data_list(first_word)) /* If the readen word is a name from the list, put the walue to the binary file */
+                    fprintf(output_file, "%d\t%s\n",IC++,labels_temp->data);
+                else
+                    fprintf(output_file, "%d\t%s\n", IC++,first_word);
+                strcpy(first_word,"");
+            }
+            else
+                strncat(first_word,&line[pos],1);
+        }
+        
+        fprintf(output_file, "%d\t%s\n", IC++,first_word);
+        return 0;
+    }
+
+    return command_data_write(line,output_file); /*If not data or string, send to the command sort function*/
+}  
 
 int is_decloration(char* line, char* input_file_name){
 
@@ -169,27 +222,25 @@ int is_decloration(char* line, char* input_file_name){
         
     }
 
-    if(strcmp(first_word,".string")==0){
-        return 1;
-    }
-
     if(strcmp(first_word,".entry")==0){
+        sprintf(file_name_string, "%s.ent", input_file_name); /*Change the temp file name to file.ex*/
+        extern_file = fopen(file_name_string,"a"); /* Open/create a file in add mode*/
+        sscanf(line, "%*s %s", second_word); /*Take the second word after the .extern (the name)*/
+        fprintf(extern_file, "%s\t%d\n",second_word,IC); /* FIX THE INPUTING*/
+        fclose(extern_file); /*Close the file*/  
         return 1;
     }
 
     if(strcmp(first_word,".extern")==0){ 
 
-        sprintf(file_name_string, "%s.ex", input_file_name); /*Change the temp file name to file.ex*/
+        sprintf(file_name_string, "%s.ext", input_file_name); /*Change the temp file name to file.ex*/
         extern_file = fopen(file_name_string,"a"); /* Open/create a file in add mode*/
         sscanf(line, "%*s %s", second_word); /*Take the second word after the .extern (the name)*/
-        fprintf(extern_file, "%s  %d\n",second_word,(IC+100)); /* FIX THE INPUTING*/
+        fprintf(extern_file, "%s\t%d\n",second_word,IC); /* FIX THE INPUTING*/
         fclose(extern_file); /*Close the file*/  
         return 1;
     }
 
-    if(strcmp(first_word,".data")==0){
-        return 1;
-    }
     return 0;
 }
 
@@ -224,7 +275,7 @@ int add_label(char* line){
 int in_data_list(char* name){
 
     if(labels_list_head == NULL)
-        return 0; /*If the head is empty, the name can be in the list*/
+        return 0; /*If the head is empty, the name can't be in the list*/
 
     labels_temp = labels_list_head;
     while(labels_temp!=NULL){

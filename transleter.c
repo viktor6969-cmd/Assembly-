@@ -191,38 +191,6 @@ char* find_varable(char* variable_name){
     return variable_name;
 }
 
-int is_defenition(char* line,char* command){
-    sscanf(line, "%s", first_word); /*take the first word of the line*/
-    sscanf(line, "%*s %s", second_word);/*Take the second word of the line*/
-
-    if((strcmp(first_word,".define")==0)||(strcmp(second_word,".define")==0)){
-        strcat(command,line);
-        return 1;
-    }
-
-    if(strcmp(first_word,".string")==0){
-        strcat(command,line);
-        return 1;
-    }
-
-    if(strcmp(first_word,".entry")==0){
-        strcat(command,line);
-        return 1;
-    }
-
-    if(strcmp(first_word,".extern")==0){
-        strcat(command,line);
-        return 1;
-    }
-    return 0;
-}
-
-int is_label(char* line,char* command){
-
-    return 1;
-}
-
-int is_command(char* line,char* command){
 
     /*sscanf(line, "%s", first_word); Read the first word*/   
     int i;
@@ -240,11 +208,4 @@ int is_command(char* line,char* command){
 void find_operands(int i,char* line, char* command){
     strcat(command,"\n operands: ");
     strcat(command,(command_list+i)->operands);
-}
-
-
-
-
-void translater(){
-    printf("Translator Done!");
 }

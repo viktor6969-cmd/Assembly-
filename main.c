@@ -11,12 +11,12 @@ int main(int argc, char *argv[]){
     if(InputValidCheck(argc,argv)) /*Check if the file exist and accessble*/
         return 1;
 
+    make_command_list();
     for(i=1;i<argc;i++){
         mac = open_macros(argv[i]);/*Precompile function, returns 1 if file.am was made*/
-
-        /*first_values_read(macro_file);*/
         first_read(argv[i],mac);
     }
+    free_command_list();
    /*compile_to_binary(macro_file);*/
     return 0;
 }
