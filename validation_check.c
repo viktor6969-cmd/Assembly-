@@ -14,9 +14,13 @@ int defenition_name_valid_check(char* name,label* label_head){
     /*------Look for the name in lists---------*/
     while(label_temp!=NULL){
 
-        if(strcmp(label_temp->name,name)==0)
+        if(strcmp(label_temp->name,name)==0){
+            if(strcmp(label_temp->type,".extern")==0)
+                return 4;
+            if(strcmp(label_temp->type,".entry")==0)
+                return 5;
             return 1;
-
+        }
         label_temp = label_temp->next;
     }
 
@@ -48,6 +52,4 @@ int isNumber(char *str) {
     return 1; 
 }
 
-void print_error(char* error){
-    printf("\x1b[31m%s \x1b[0m",error);
-}
+

@@ -34,6 +34,7 @@ int DC;
 /*--------------Functions---------------*/
 int first_read(FILE* input_file){
     
+    label* temp;
     char line[MAX_LINE_SIZE];
     char first_word[MAX_LINE_SIZE];
     error_exist = 0;
@@ -45,26 +46,45 @@ int first_read(FILE* input_file){
     while (fgets(line, sizeof(line), input_file)){ /*Go thrue the file, line by line*/
         
         sscanf(line, "%s", first_word); /*Read the first word*/  
+        
         /*------------Skip all the comment lines--------------------*/
         if(line[0] == ';'){
             rows++;
             continue;
         }
+        
         /*-----------Check if variable definition-------------------*/
         if(strcmp(first_word,".define")==0){
             define_var(line);
             rows++;
             continue;
         }
+        
         /*------------Check if extern definition--------------------*/
+        temp = in_data_list(first_word); /*Cheack if it's a Label*/
         if(strcmp(first_word,".extern")==0){
-            /*add_binary_line(first_word,'e',0);*/
+            sscanf(line, "%*s %s", first_word);
+            
+            if(temp==NULL || (strcmp(temp->type,".extern")==0)){
+                add_label(first_word,".extern","");
+            }
+            else{
+                printf("ERROR in row %d:Double defenition for:%s\n",rows,first_word);
+                error_exist=1;
+            }
             rows++;
             continue;
         }
         /*-------------Check if entry defenition--------------------*/
         if(strcmp(first_word,".entry")==0){
-            /*add_binary_line(first_word,'e',0);*/
+            sscanf(line, "%*s %s", first_word);
+            if(temp==NULL || (strcmp(temp->type,".entry")==0)){
+                add_label(first_word,".entry","");
+            }
+            else{
+                printf("ERROR in row %d:Double defenition for:%s\n",rows,first_word);
+                error_exist=1;
+            }
             rows++;
             continue;
         }
@@ -294,14 +314,21 @@ label* in_data_list(char* name){
 
     label_temp = label_list_head;
     while(label_temp!=NULL){
-        if(strcmp(label_temp->name,name)==0)
+        if(strcmp(label_temp->name,name)==0){
+            if(strcmp(label_temp->name,".entry")==0){
+
+                return NULL;
+            }
             return label_temp;
+        }
         label_temp = label_temp->next;
     }
     return NULL;
 }
 
 int label_validation_check(char* name){
+
+    char word[50];
     switch(defenition_name_valid_check(name,label_list_head)){
 
         case 1:
@@ -319,7 +346,16 @@ int label_validation_check(char* name){
             error_exist = 1;
             break;
 
-        case 0:
+        case 4:
+            sprintf(word, "%d", IC+100);
+            add_label(name,"external_use",word);
+            return 1;
+            break;
+        
+        case 5:
+            sprintf(word, "%d", IC+100);
+            add_label(name,"entry_use",word);
+            return 1;
             break;
     }    
     return 0;

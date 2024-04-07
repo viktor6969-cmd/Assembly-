@@ -39,3 +39,6 @@ char* char_to_binary(char ch){
     return binary;
 }
 
+void print_error(char* error){
+    printf("\x1b[31m%s \x1b[0m",error);
+}
