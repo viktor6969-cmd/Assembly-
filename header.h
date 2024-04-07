@@ -1,12 +1,45 @@
 
-int InputValidCheck(int argc, char *argv[]);
+/*-----------Defenitions----------------*/
+#define MAX_BINARY_LINE_SIZE 22 /*The maximum binary line: 4(maximum adress 4096)+4(tab)+14(binary code)*/
+#define MAX_LABEL_NAME_SIZE 31 /*Maximum label size*/
+#define MAX_LABEL_TYPE_SIZE 8 /*The longest label type is 'mdefine' which 7 chars*/
+#define COMMAND_LIST_SIZE 16 /*Maximum size of the assembly command list */
+#define MAX_LINE_SIZE 81 /*Longest size of line +1 for the '\0' char*/
+
+/*----------------STRUCTERS-----------------*/
+typedef struct label{
+    char* name;
+    char* type;
+    char* data;
+    struct label* next;
+}label;
+
+/*-----------Open_macros functions---------*/
 int open_macros(char *name);
-int first_read(char* input_file_name, int mcr);
-int command_data_write(char* line,int IC,FILE* output_file);
-int isNumber(char *str);
-int make_command_list();
+
+/*------------Utilits functions-------------*/
+char* string_to_binary(char* number, int bits);
+char* num_to_binary(int number, int bits);
+
+/*--------Validation_check functions--------*/
+int defenition_name_valid_check(char* first_word, label* list);
 void print_error(char* error_string);
-void compile_to_binary(FILE *macro);
+int isNumber(char *str);
+
+/*-----------First_read functions-----------*/
+int first_read(FILE* file);
+
+/*------Commands_opeartions functions--------*/
+int make_command_list();
+char* command_code(char* name);
 void free_command_list();
+
+
+
+
+int command_data_write(char* line,int IC,FILE* output_file);
+label* in_data_list(char* name);
+void compile_to_binary(FILE *macro);
+
 
 

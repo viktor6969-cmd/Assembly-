@@ -20,6 +20,7 @@ typedef struct labels{
 int label_data_write(char* line,FILE* output_file);
 int is_decloration(char* line, char* file_name);
 int in_data_list(char* name);
+int define_command(char* line);
 labels* new_label();
 
 
@@ -65,6 +66,13 @@ int first_read(char* input_file_name, int mcr){
         sscanf(line, "%s", first_word); /*Read the first word*/  
         if(line[0] == ';')/*Skip if it's a comment line*/
             continue;
+
+/*---------------Check if definition--------------------------------*/
+
+        if(strcmp(first_word,".define")==0){
+            define_command(line);
+            continue;
+        }
 /*---------------Check if decloration------------------------------*/
         switch(is_decloration(line,input_file_name)){/*Check if the command is of decloration type*/
             case -1: /*If it's a decloration, and the name is already exist in the data list, return error*/
@@ -131,10 +139,10 @@ int first_read(char* input_file_name, int mcr){
     labels_temp = labels_list_head;
     printf("\n");
 
-    while(labels_temp!=NULL){
+   /*while(labels_temp!=NULL){
         printf("%s\t%s\t%s\n",labels_temp->name,labels_temp->type,labels_temp->data);
         labels_temp = labels_temp->next;
-    }
+    }*/
     fclose(output_binary_file);
 
     return 0;
@@ -187,39 +195,39 @@ int label_data_write(char* line,FILE* output_file){
 }  
 
 int define_command(char* line){
-    
+
+    sscanf(line, "%*s %[^= ]", first_word);/*Scan the first word before the = char, (the variable name)*/
+    /*-----------Is the name exist already--------------*/
+    if(defenition_name_valid_check(first_word))
+        return -1;    
+    if(!in_data_list(first_word)){
+        labels_temp = new_label(); /*Make new label*/
+        sscanf(line, "%*[^=]=%s", second_word); /*Scan the first word after the = char, (the variable value)*/
+        strcat(labels_temp->name,first_word);
+        strcat(labels_temp->type,"mdefine");
+        strcat(labels_temp->data,second_word);
+        if(labels_list_head == NULL){
+            labels_list_head = labels_temp;
+            labels_list_curent = labels_temp;
+        }
+        else{
+            labels_list_curent->next = labels_temp;
+            labels_list_curent = labels_temp; 
+        }
+        return 1;
+    }
+
+    else {
+        printf("The variable name \"%s\" is used more than once\n",first_word);
+        return -1;
+    }
+    /*Add validation check */
 }
 
 int is_decloration(char* line, char* input_file_name){
 
     sscanf(line, "%s", first_word); /*take the first word of the line*/
-    if((strcmp(first_word,".define")==0)){/*if its a define command*/
-        sscanf(line, "%*s %[^= ]", first_word);/*Scan the first word before the = char, (the variable name)*/
-    /*-----------Is the name exist already--------------*/    
-        if(!in_data_list(first_word)){
-            labels_temp = new_label(); /*Make new label*/
-            sscanf(line, "%*[^=]=%s", second_word); /*Scan the first word after the = char, (the variable value)*/
-            strcat(labels_temp->name,first_word);
-            strcat(labels_temp->type,"mdefine");
-            strcat(labels_temp->data,second_word);
-            if(labels_list_head == NULL){
-                labels_list_head = labels_temp;
-                labels_list_curent = labels_temp;
-            }
-            else{
-                labels_list_curent->next = labels_temp;
-                labels_list_curent = labels_temp; 
-            }
-            return 1;
-        }
-
-        else {
-            printf("The variable name \"%s\" is used more than once\n",first_word);
-            return -1;
-        }
-        /*Add validation check */
-        
-    }
+    
 
     if(strcmp(first_word,".entry")==0){
         sprintf(file_name_string, "%s.ent", input_file_name); /*Change the temp file name to file.ex*/
