@@ -141,12 +141,29 @@ int label_def(char* name,char* line){
 }
 
 int add_string_node(char* name,char* line){
+    /* ADD VALIDATION CHECK*/
     int i;
-    char word[MAX_LINE_SIZE-6]; /* The -7 is becouse we skipping the '.string'*/
-    sprintf(word, "%d", DC+IC+100);
-    add_label(name,".string",word);
-    printf("Line: %s\n",line);
-    
+    char temp[MAX_BINARY_LINE_SIZE];
+    sprintf(temp, "%d", DC+IC+100);
+    add_label(name,".string",temp);
+    for(i = 3;i<strlen(line)-3;i++){
+
+        if((line[i] >= 'a' && line[i] <= 'z') || (line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= '0' && line[i] <= '9')){ 
+            sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
+            strcat(temp,char_to_binary(line[i]));
+            add_binary_line(temp,'d',0);
+            DC++;
+            continue;
+        }
+        else{
+            printf("ERROR in row %d:Invalid char '%c' \n",rows,line[i]);
+            return 1;
+        }
+    }
+    sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
+    strcat(temp,char_to_binary('\0'));
+    add_binary_line(temp,'d',0);
+    DC++;
     return 0;
 }
 
@@ -172,15 +189,15 @@ int add_data_node(char* name,char* line){
                 }
                 if(isNumber(word)){ /*If it's a number add him*/
                     sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
-                    strcat(temp,word);
-                    add_binary_line(temp,'d',0);
+                    strcat(temp,num_to_binary(atoi(word),14));/*Take the string 'word', cust him to int, and convert to binary, then add to temp*/
+                    add_binary_line(temp,'d',0); /* Save in data list with row number*/
                     strcpy(word,"");
                     DC++;
                     continue;
                 }
                 if(in_data_list(word)!=NULL){ /*Check the labels list*/
                     sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
-                    strcat(temp,in_data_list(word)->data);
+                    strcat(temp,num_to_binary(atoi(in_data_list(word)->data),14));
                     add_binary_line(temp,'d',0);
                     strcpy(word,"");
                     DC++;
@@ -198,13 +215,13 @@ int add_data_node(char* name,char* line){
         }
     if(isNumber(word)){ /*If it's a number add him*/
         sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
-        strcat(temp,word);
+        strcat(temp,num_to_binary(atoi(word),14));
         add_binary_line(temp,'d',0);
          DC++;
     }
     if(in_data_list(word)!=NULL){ /*Check the labels list*/
         sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
-        strcat(temp,in_data_list(word)->data);
+        strcat(temp,num_to_binary(atoi(in_data_list(word)->data),14));
         add_binary_line(temp,'d',0);
         DC++;
     }

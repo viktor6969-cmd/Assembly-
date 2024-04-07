@@ -19,3 +19,23 @@ char* num_to_binary(int number, int bits){
     binary[bits] = '\0';/*Add the null terminator*/
     return binary; 
 }
+
+char* char_to_binary(char ch){
+    int i;
+    int ascii = (int)ch; 
+    char *binary = (char *)malloc(15); 
+
+    if (binary == NULL) {
+        printf("Memory allocation failuer.\n");
+        return NULL;
+    }
+
+    binary[14] = '\0';
+
+    for (i = 0; i < 14; i++) {
+        binary[i] = (ascii & (1 << (13 - i))) ? '1' : '0'; 
+    }
+
+    return binary;
+}
+

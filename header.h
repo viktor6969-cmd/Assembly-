@@ -20,6 +20,7 @@ int open_macros(char *name);
 /*------------Utilits functions-------------*/
 char* string_to_binary(char* number, int bits);
 char* num_to_binary(int number, int bits);
+char* char_to_binary(char ch);
 
 /*--------Validation_check functions--------*/
 int defenition_name_valid_check(char* first_word, label* list);
