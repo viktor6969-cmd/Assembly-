@@ -4,8 +4,27 @@
 #include "header.h"
 
 
-char* string_to_binary(char* number, int bits){
-    return number;
+char* string_to_binary(char* str, int num_bits){
+    char *binary_str = (char *)malloc((num_bits + 1) * sizeof(char));
+    int num;
+    int i;
+
+    if (binary_str == NULL) {
+        printf("Memory allocation error.\n");
+        return NULL;
+    }
+    num= atoi(str);
+    
+    if (num < 0)
+        num |= (1 << (num_bits - 1));
+
+    
+    for (i = num_bits - 1; i >= 0; i--) {
+        binary_str[i] = (num & 1) ? '1' : '0';
+        num >>= 1;
+    }
+    binary_str[num_bits] = '\0'; 
+    return binary_str;
 }
 
 char* num_to_binary(int number, int bits){

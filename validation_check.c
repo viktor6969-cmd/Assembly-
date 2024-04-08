@@ -16,9 +16,9 @@ int defenition_name_valid_check(char* name,label* label_head){
 
         if(strcmp(label_temp->name,name)==0){
             if(strcmp(label_temp->type,".extern")==0)
-                return 4;
-            if(strcmp(label_temp->type,".entry")==0)
                 return 5;
+            if(strcmp(label_temp->type,".entry")==0)
+                return 6;
             return 1;
         }
         label_temp = label_temp->next;
@@ -31,7 +31,16 @@ int defenition_name_valid_check(char* name,label* label_head){
     /*---------Cheak if register name---------*/
     if(is_register(name))
         return 3;
+
+    if(is_number(name))
+        return 4;
         
+    return 0;
+}
+
+int operands_valid(char* line,int op_num){
+
+
     return 0;
 }
 
@@ -39,7 +48,7 @@ int is_register(char* name){
    return((name[0]=='r')&&(name[1] >= '0' && name[1] <= '8'));
 }
 
-int isNumber(char *str) {
+int is_number(char *str) {
     if (str == NULL || *str == '\0') 
         return 0; 
     if (*str == '-') 

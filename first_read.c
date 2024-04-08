@@ -19,6 +19,7 @@ int add_data_node(char* name,char* line);
 int label_validation_check(char* name);
 int label_def(char* name,char* line);
 int define_var(char* line);
+void free_labels_list();
 label* in_data_list(char* name);
 
 /*----------GLOBAL VARIABLES------------*/
@@ -34,6 +35,7 @@ int DC;
 /*--------------Functions---------------*/
 int first_read(FILE* input_file){
     
+    int temp_num;
     label* temp;
     char line[MAX_LINE_SIZE];
     char first_word[MAX_LINE_SIZE];
@@ -75,6 +77,7 @@ int first_read(FILE* input_file){
             rows++;
             continue;
         }
+        
         /*-------------Check if entry defenition--------------------*/
         if(strcmp(first_word,".entry")==0){
             sscanf(line, "%*s %s", first_word);
@@ -83,17 +86,27 @@ int first_read(FILE* input_file){
             }
             else{
                 printf("ERROR in row %d:Double defenition for:%s\n",rows,first_word);
-                error_exist=1;
+                error_exist++;
             }
             rows++;
             continue;
         }
-        /*---------------------Check if label----------------------*/
+        
+        /*---------------------Check if label-----------------------*/
         if((first_word[strlen(first_word)-1]) == ':'){
-            label_def(first_word,line);
-            rows++;
+            
+            rows+=label_def(first_word,line);
             continue;
         }
+        
+        /*---------------------Check if comand ---------------------*/
+        if(command_sort(first_word,line,IC)){
+            IC++;
+            continue;
+        }
+
+        printf("ERROR in row %d: Invalid command line:%s\n",rows,line);
+        /*error_exist++;*/
         rows++;
     }
     
@@ -106,7 +119,7 @@ int first_read(FILE* input_file){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
-
+    free_labels_list();
     return error_exist;
 }
 
@@ -120,9 +133,9 @@ int define_var(char* line){
     
     /*-----------Validation check--------------*/
     label_validation_check(first_word);
-    if(!isNumber(second_word)){
+    if(!is_number(second_word)){
         printf("Error in line %d:The value '%s' must be an integer number \n",rows++,second_word);
-        error_exist = 1;
+        error_exist++;
     }
     /*-------Add variable to labels list---------*/
     add_label(first_word,"mdefine",second_word);
@@ -133,7 +146,6 @@ int define_var(char* line){
 int label_def(char* name,char* line){
 
     char first_word[MAX_LINE_SIZE];
-    char comand_name[MAX_LINE_SIZE];
     name[strlen(name) - 1] = '\0'; /*Remove the ':' char*/
     label_validation_check(name); /*Validation check*/
     sscanf(line, "%*s %[^\n]", line);/*Remove the name of the label from the line*/
@@ -152,12 +164,11 @@ int label_def(char* name,char* line){
     }
 
     sprintf(first_word,"%d",(IC+100)); /*Use the first_word variable, to send the curent code row*/ 
-    add_label(name,"code",first_word); /*Add code label to the list*/
-    sscanf(line, "%s", comand_name); /*Read the comand name*/  
-    sprintf(first_word,"0%d\t0000",(IC++)+100);/*Add zero to the rows number*/
-    strcat(first_word,command_code(comand_name));
-    add_binary_line(first_word,'c',0);
-    return 1;
+    add_label(name,"comand",first_word); /*Add code label to the list*/
+    sscanf(line, "%s", name);
+    sscanf(line, "%*s %[^\n]", line);/*Remuve the command name*/
+    IC +=command_sort(name,line,IC);
+    return 0;
 }
 
 int add_string_node(char* name,char* line){
@@ -207,7 +218,7 @@ int add_data_node(char* name,char* line){
                     printf("ERROR in row %d: line: %s \nDubble \",\" char in data declaration",rows,line);
                     return 1;
                 }
-                if(isNumber(word)){ /*If it's a number add him*/
+                if(is_number(word)){ /*If it's a number add him*/
                     sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
                     strcat(temp,num_to_binary(atoi(word),14));/*Take the string 'word', cust him to int, and convert to binary, then add to temp*/
                     add_binary_line(temp,'d',0); /* Save in data list with row number*/
@@ -233,7 +244,7 @@ int add_data_node(char* name,char* line){
             else
                 strncat(word,&line[i],1);
         }
-    if(isNumber(word)){ /*If it's a number add him*/
+    if(is_number(word)){ /*If it's a number add him*/
         sprintf(temp,"0%d\t",IC+DC+100);/*Add zero to the rows number*/
         strcat(temp,num_to_binary(atoi(word),14));
         add_binary_line(temp,'d',0);
@@ -256,7 +267,7 @@ int add_label(char* name,char* type,char* data){
     label* new_label = malloc(sizeof(label));
     if (new_label == NULL){ 
         print_error("Error allocating memory for the data tabel");
-        error_exist = -1;
+        error_exist++;
         return -1;
     }
 
@@ -285,12 +296,12 @@ int add_binary_line(char* data,char type, int finished){
     binary* new_binary_line = malloc(sizeof(binary));
     if (new_binary_line == NULL){ 
         print_error("Error allocating memory for the data tabel");
-        error_exist = -1;
-        return -1;
+        error_exist ++;
+        return 1;
     }
     new_binary_line->data = malloc(MAX_BINARY_LINE_SIZE*sizeof(char));
     strcat(new_binary_line->data,data);
-    new_binary_line->finished = 0;
+    new_binary_line->finished = finished;
     new_binary_line->type = type;
     new_binary_line->next = NULL;
 
@@ -333,30 +344,47 @@ int label_validation_check(char* name){
 
         case 1:
             printf("Error in line %d: Multiple definitions of label '%s'\n",rows++,name);
-            error_exist = 1;
+            error_exist++;
             break;
 
         case 2:
             printf("Error in line %d: The label '%s' can't have a name of assembly command\n",rows++,name);
-            error_exist = 1;
+            error_exist++;
             break;
 
         case 3:
             printf("Error in line %d: The label '%s' can't be a register name\n",rows++,name);
-            error_exist = 1;
+            error_exist++;
             break;
 
         case 4:
+            printf("Error in line %d: The label '%s' can't be a number\n",rows++,name);
+            error_exist++;
+            break;
+
+        case 5:
             sprintf(word, "%d", IC+100);
             add_label(name,"external_use",word);
             return 1;
             break;
         
-        case 5:
+        case 6:
             sprintf(word, "%d", IC+100);
             add_label(name,"entry_use",word);
             return 1;
             break;
     }    
     return 0;
+}
+
+void free_labels_list(){
+
+    while(label_list_head!=NULL){
+        label_list_curent = label_list_head->next;
+        free(label_list_head->name);
+        free(label_list_head->data);
+        free(label_list_head->type);
+        free(label_list_head);
+        label_list_head = label_list_curent;
+    }
 }
