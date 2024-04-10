@@ -1,6 +1,6 @@
 
 /*-----------Defenitions----------------*/
-#define MAX_BINARY_LINE_SIZE 30 /*The maximum binary line: 4(maximum adress 4096)+4(tab)+14(binary code)*/
+#define MAX_BINARY_LINE_SIZE 81 /*The maximum binary line: 4(maximum adress 4096)+4(tab)+14(binary code)*/
 #define MAX_LABEL_NAME_SIZE 31 /*Maximum label size*/
 #define MAX_LABEL_TYPE_SIZE 8 /*The longest label type is 'mdefine' which 7 chars*/
 #define COMMAND_LIST_SIZE 16 /*Maximum size of the assembly command list */
@@ -26,6 +26,7 @@ char* char_to_binary(char ch);
 int defenition_name_valid_check(char* first_word, label* list);
 void print_error(char* error_string);
 int is_number(char *str);
+int is_register(char* name);
 
 /*-----------First_read functions-----------*/
 int add_binary_line(char* data,char type, int finished);
@@ -36,7 +37,7 @@ int first_read(FILE* file);
 int make_command_list();
 void free_command_list();
 char* command_code(char* name);
-int command_sort(char* name,char* line,int IC);
+int command_sort(char* name,char* line,int IC,int rows);
 
 
 
