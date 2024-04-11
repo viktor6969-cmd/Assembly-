@@ -44,7 +44,7 @@ int command_sort(char* name,char* line,int IC,int rows);
 
 
 int command_data_write(char* line,int IC,FILE* output_file);
-label* in_data_list(char* name);
+label* in_data_list(char* name,int data_flag);
 void compile_to_binary(FILE *macro);
 
 

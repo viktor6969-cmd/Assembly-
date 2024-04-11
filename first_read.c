@@ -12,15 +12,12 @@ typedef struct binary{
 }binary;
 
 /*------------DECLARATIONS--------------*/
-int add_binary_line(char* data,char type,int finished);
-int add_label(char* name,char* type,char* data);
 int add_string_node(char* name,char* line);
 int add_data_node(char* name,char* line);
 int label_validation_check(char* name);
 int label_def(char* name,char* line);
 int define_var(char* line);
 void free_labels_list();
-label* in_data_list(char* name);
 
 /*----------GLOBAL VARIABLES------------*/
 binary* binary_output_curent = NULL;
@@ -63,7 +60,7 @@ int first_read(FILE* input_file){
         }
         
         /*------------Check if extern definition--------------------*/
-        temp = in_data_list(first_word); /*Cheack if it's a Label*/
+        temp = in_data_list(first_word,0); /*Cheack if it's a Label*/
         if(strcmp(first_word,".extern")==0){
             sscanf(line, "%*s %s", first_word);
             
@@ -233,9 +230,9 @@ int add_data_node(char* name,char* line){
                     DC++;
                     continue;
                 }
-                if(in_data_list(word)!=NULL){ /*Check the labels list*/
+                if(in_data_list(word,0)!=NULL){ /*Check the labels list*/
                     sprintf(temp,"0%d\t",IC+DC);/*Add zero to the rows number*/
-                    strcat(temp,num_to_binary(atoi(in_data_list(word)->data),14));
+                    strcat(temp,num_to_binary(atoi(in_data_list(word,1)->data),14));
                     add_binary_line(temp,'d',0);
                     strcpy(word,"");
                     DC++;
@@ -257,9 +254,9 @@ int add_data_node(char* name,char* line){
         add_binary_line(temp,'d',0);
          DC++;
     }
-    if(in_data_list(word)!=NULL){ /*Check the labels list*/
+    if(in_data_list(word,0)!=NULL){ /*Check the labels list*/
         sprintf(temp,"0%d\t",IC+DC);/*Add zero to the rows number*/
-        strcat(temp,num_to_binary(atoi(in_data_list(word)->data),14));
+        strcat(temp,num_to_binary(atoi(in_data_list(word,0)->data),14));
         add_binary_line(temp,'d',0);
         DC++;
     }
@@ -324,7 +321,7 @@ int add_binary_line(char* data,char type, int finished){
     return 0;
 }
 
-label* in_data_list(char* name){
+label* in_data_list(char* name,int data_flag){
 
     label* label_temp;
     if(label_list_head == NULL)
@@ -333,10 +330,8 @@ label* in_data_list(char* name){
     label_temp = label_list_head;
     while(label_temp!=NULL){
         if(strcmp(label_temp->name,name)==0){
-            if(strcmp(label_temp->name,".entry")==0){
-
-                return NULL;
-            }
+            if(data_flag)
+                return (strcmp(label_temp->type,"mdefine")==0 || strcmp(label_temp->type,".extern")==0)?(label_temp):(NULL);
             return label_temp;
         }
         label_temp = label_temp->next;
