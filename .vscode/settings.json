@@ -4,6 +4,7 @@
         "stdlib.h": "c",
         "stdio.h": "c",
         "system_error": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "type_traits": "c"
     }
 }

@@ -100,6 +100,7 @@ int first_read(FILE* input_file){
         }
         
         /*---------------------Check if comand ---------------------*/
+        sscanf(line, "%*s %[^\n]", line);
         temp_num=command_sort(first_word,line,IC,rows);
         if(temp_num > 0){
             IC+=temp_num;
@@ -116,6 +117,7 @@ int first_read(FILE* input_file){
         label_list_head = label_list_head->next;
     }
     printf("\n\n");
+
     while(binary_output_head!=NULL){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
@@ -167,6 +169,7 @@ int label_def(char* name,char* line){
     sprintf(first_word,"%d",IC); /*Use the first_word variable, to send the curent code row*/ 
     add_label(name,"comand",first_word); /*Add code label to the list*/
     sscanf(line, "%s", name);
+    sscanf(line, "%*s %[^\n]", line);
     temp_num=command_sort(name,line,IC,rows);
     if(temp_num>0)
         IC+=temp_num;
@@ -341,7 +344,7 @@ label* in_data_list(char* name){
     return NULL;
 }
 
-int label_validation_check(char* name){
+int label_validation_check(char* name){ 
 
     char word[50];
     switch(defenition_name_valid_check(name,label_list_head)){
@@ -367,13 +370,13 @@ int label_validation_check(char* name){
             break;
 
         case 5:
-            sprintf(word, "%d", IC+100);
+            sprintf(word, "%d", IC);
             add_label(name,"external_use",word);
             return 1;
             break;
         
         case 6:
-            sprintf(word, "%d", IC+100);
+            sprintf(word, "%d", IC);
             add_label(name,"entry_use",word);
             return 1;
             break;
