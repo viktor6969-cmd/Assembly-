@@ -83,6 +83,14 @@ int command_sort(char* name,char* line,int IC,int rows){
     }     
     /*------------One variable--------------------*/
     else{
+        type1 = opearnd_type(first_operand);
+        if(type1 == 3){ /*Register sort*/
+            sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2));
+            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
+            sprintf(binary_line,"0%d\t000000000%s00",IC++,string_to_binary(&first_operand[1],3));
+            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+            return 2;
+        }
         sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(opearnd_type(first_operand),2));
         add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
         return 1+ (write_operand(opearnd_type(first_operand),IC,first_operand));/* Add the additional lines*/
@@ -139,7 +147,6 @@ int write_operand(int type,int IC,char* first){
         /*-----------ARRAY sort---------------*/
         case 2:
         sscanf(first, "%[^[][%[^]]]", temp_first, temp_second);
-        printf("The first:\'%s\' second:\'%s\'\n",temp_first,temp_second);
         temp=in_data_list(temp_first,1);
 
         /*If the Label name exist in Data list*/
@@ -152,7 +159,7 @@ int write_operand(int type,int IC,char* first){
             is_found = 0;
 
         sprintf(binary_line,"0%d\t%s",IC++,temp_first);
-        add_binary_line(binary_line,'A',is_found);/*Add the first line, with the sort number*/
+        add_binary_line(binary_line,'u',is_found);/*Add the first line, with the sort number*/
         temp=in_data_list(temp_second,0);
 
         /*If the index name exist in data list*/
@@ -170,10 +177,7 @@ int write_operand(int type,int IC,char* first){
         add_binary_line(binary_line,'I',is_found);/*Add the first line, with the sort number*/
         return 2;
         
-        /*-------------Register sort-----------*/
-        case 3:
-            return 0;
-
+        /*If the label is undefined, put his name in the line*/
         case 4:
             sprintf(binary_line,"0%d\t%s",IC++,first);
             add_binary_line(binary_line,'u',0);/*Add the first line, with the sort number*/
@@ -198,7 +202,7 @@ int opearnd_type (char* name){
     }
     return 4; /*Undefined label*/
 }
- 
+
 int make_command_list(){ /*Make space for new command list*/
 
     int i;

@@ -18,6 +18,8 @@ int label_validation_check(char* name);
 int label_def(char* name,char* line);
 int define_var(char* line);
 void free_labels_list();
+int second_data_sort();
+    
 
 /*----------GLOBAL VARIABLES------------*/
 binary* binary_output_curent = NULL;
@@ -109,6 +111,8 @@ int first_read(FILE* input_file){
         rows++;
     }
     
+    /*error_exist = second_data_sort();*/
+
     while(label_list_head!=NULL){
         printf("%s\t%s\t%s\n",label_list_head->name,label_list_head->type,label_list_head->data);
         label_list_head = label_list_head->next;
@@ -251,19 +255,41 @@ int add_data_node(char* name,char* line){
     if(is_number(word)){ /*If it's a number add him*/
         sprintf(temp,"0%d\t",IC+DC);/*Add zero to the rows number*/
         strcat(temp,num_to_binary(atoi(word),14));
-        add_binary_line(temp,'d',0);
+        add_binary_line(temp,'d',1);
          DC++;
     }
     if(in_data_list(word,0)!=NULL){ /*Check the labels list*/
         sprintf(temp,"0%d\t",IC+DC);/*Add zero to the rows number*/
         strcat(temp,num_to_binary(atoi(in_data_list(word,0)->data),14));
-        add_binary_line(temp,'d',0);
+        add_binary_line(temp,'d',1);
         DC++;
     }
     return 0;
 }
 
+int second_data_sort(){
 
+    binary *binary_temp = binary_output_head;
+    label *label_temp = NULL;
+    char *word = malloc(MAX_BINARY_LINE_SIZE * sizeof(char));
+    char *line = malloc(MAX_BINARY_LINE_SIZE * sizeof(char));
+
+    while (binary_temp != NULL)
+    {
+        if(binary_temp->type == 'u'){
+            sscanf(binary_temp->data, "%s %s",line,word);
+            if((label_temp = in_data_list(word,1)) != NULL){
+                sprintf(binary_temp->data,"%s\t%s",line,label_temp->data);
+            }
+            else {
+                printf("ERROR: Undefined Label:\'%s\'",word);
+                error_exist++;
+            }
+        }
+        binary_temp = binary_temp->next;
+    }
+    return error_exist;
+}
 
 
 int add_label(char* name,char* type,char* data){
