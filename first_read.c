@@ -111,7 +111,7 @@ int first_read(FILE* input_file){
         rows++;
     }
     
-    /*error_exist = second_data_sort();*/
+    error_exist = second_data_sort();
 
     while(label_list_head!=NULL){
         printf("%s\t%s\t%s\n",label_list_head->name,label_list_head->type,label_list_head->data);
@@ -168,7 +168,7 @@ int label_def(char* name,char* line){
     }
 
     sprintf(first_word,"%d",IC); /*Use the first_word variable, to send the curent code row*/ 
-    add_label(name,"comand",first_word); /*Add code label to the list*/
+    add_label(name,".data",first_word); /*Add code label to the list*/
     sscanf(line, "%s", name);
     sscanf(line, "%*s %[^\n]", line);
     temp_num=command_sort(name,line,IC,rows);
@@ -278,11 +278,16 @@ int second_data_sort(){
     {
         if(binary_temp->type == 'u'){
             sscanf(binary_temp->data, "%s %s",line,word);
-            if((label_temp = in_data_list(word,1)) != NULL){
-                sprintf(binary_temp->data,"%s\t%s",line,label_temp->data);
+            if((label_temp = in_data_list(word,2)) != NULL){
+                if(strcmp(label_temp->type,".extern")==0){
+                    printf("The name is:%s",label_temp->name);
+                    sprintf(binary_temp->data,"%s\t00000000000001",line);
+                }
+                else
+                    sprintf(binary_temp->data,"%s\t%s10",line,string_to_binary(label_temp->data,12));
             }
             else {
-                printf("ERROR: Undefined Label:\'%s\'",word);
+                printf("ERROR: Undefined Label:\'%s\'\n",word);
                 error_exist++;
             }
         }
@@ -356,8 +361,14 @@ label* in_data_list(char* name,int data_flag){
     label_temp = label_list_head;
     while(label_temp!=NULL){
         if(strcmp(label_temp->name,name)==0){
-            if(data_flag)
+            if(data_flag==1)
                 return (strcmp(label_temp->type,"mdefine")==0 || strcmp(label_temp->type,".extern")==0)?(label_temp):(NULL);
+            if(data_flag ==2){
+                if(strcmp(label_temp->type,".entry")==0 || strcmp(label_temp->type,"entry_use")==0){
+                    label_temp = label_temp->next;
+                    continue;
+                }
+            }
             return label_temp;
         }
         label_temp = label_temp->next;

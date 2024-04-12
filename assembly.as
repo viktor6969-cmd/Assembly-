@@ -8,7 +8,7 @@ LOOP: jmp W
  mov STR[5], STR[2]
  sub r1, r4
  cmp K, #sz
- bne r4
+ bne W
 L1: inc L3
 .entry LOOP
  bne LOOP

@@ -47,7 +47,6 @@ int command_sort(char* name,char* line,int IC,int rows){
 
     /*------------Two variables-------------------*/
     if(sscanf(line, "%[^,],%s", first_operand, secnd_operand)==2){
-        printf("Fisrst op:%s\tsecond:%s\n",first_operand,secnd_operand);
         type1 = opearnd_type(first_operand);
         type2 = opearnd_type(secnd_operand);
 
@@ -151,7 +150,6 @@ int write_operand(int type,int IC,char* first){
 
         /*If the Label name exist in Data list*/
         if(temp!=NULL){
-            printf("In if: first \'%s\', type:%s\n",temp_first,temp->type);
             sprintf(temp_first,string_to_binary(temp->data,12));
             is_found = 1;
         }
@@ -174,7 +172,7 @@ int write_operand(int type,int IC,char* first){
             else
                 is_found = 0;
         sprintf(binary_line,"0%d\t%s00",IC++,temp_second);
-        add_binary_line(binary_line,'I',is_found);/*Add the first line, with the sort number*/
+        add_binary_line(binary_line,'i',is_found);/*Add the first line, with the sort number*/
         return 2;
         
         /*If the label is undefined, put his name in the line*/
@@ -194,13 +192,10 @@ int opearnd_type (char* name){
         return 0;
     if(is_register(name))
         return 3;
-    if((temp=in_data_list(name,1))!=NULL){/*The operand is a label*/
-        return 1;
-    }
     if (sscanf(name,"%[^[][%[^]]]",label,index) == 2) {
         return 2;
     }
-    return 4; /*Undefined label*/
+    return 1; /*Undefined label*/
 }
 
 int make_command_list(){ /*Make space for new command list*/
