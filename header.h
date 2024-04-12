@@ -14,6 +14,14 @@ typedef struct label{
     struct label* next;
 }label;
 
+typedef struct binary{
+    char* data;
+    char type;
+    int finished;
+    struct binary* next;
+}binary;
+
+
 /*-----------Open_macros functions---------*/
 int open_macros(char *name);
 
@@ -31,7 +39,9 @@ int is_register(char* name);
 /*-----------First_read functions-----------*/
 int add_binary_line(char* data,char type, int finished);
 int add_label(char* name,char* type,char* data);
-int first_read(FILE* file);
+int first_read(FILE* file,char* file_name);
+label* in_data_list(char* name,int data_flag);
+void free_labels_list();
 
 /*------Commands_opeartions functions--------*/
 int make_command_list();
@@ -39,12 +49,15 @@ void free_command_list();
 char* command_code(char* name);
 int command_sort(char* name,char* line,int IC,int rows);
 
+/*-----------Write_file functions------------*/
+int printf_binary_files(binary *binary_list,label *label_list,char* file_name); 
+
 
 
 
 
 int command_data_write(char* line,int IC,FILE* output_file);
-label* in_data_list(char* name,int data_flag);
+
 void compile_to_binary(FILE *macro);
 
 

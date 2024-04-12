@@ -93,7 +93,6 @@ int open_macros(char *input_file_string){
         
         else if(head_mcr!=NULL){
             temp_mcr = head_mcr;
-            /*printf("Got in while of %s\n", curent_mcr->name);*/
             while(temp_mcr!=NULL){
                 /*printf("Name: %s\n",first_word);*/
                 if(strcmp(first_word,temp_mcr->name)==0){ /*If this line is one of the MACRO names*/

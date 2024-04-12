@@ -4,12 +4,6 @@
 #include "header.h"
 
 /*-------------STRUCTERS----------------*/
-typedef struct binary{
-    char* data;
-    char type;
-    int finished;
-    struct binary* next;
-}binary;
 
 /*------------DECLARATIONS--------------*/
 int add_string_node(char* name,char* line);
@@ -17,7 +11,6 @@ int add_data_node(char* name,char* line);
 int label_validation_check(char* name);
 int label_def(char* name,char* line);
 int define_var(char* line);
-void free_labels_list();
 int second_data_sort();
     
 
@@ -33,7 +26,7 @@ int IC;
 int DC;
 
 /*--------------Functions---------------*/
-int first_read(FILE* input_file){
+int first_read(FILE* input_file,char* file_name){
 
     label* temp;
     char line[MAX_LINE_SIZE];
@@ -123,8 +116,12 @@ int first_read(FILE* input_file){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
+    
+    if(error_exist > 0)
+         return error_exist;
+    printf_binary_files(binary_output_head,label_list_head,file_name);
     free_labels_list();
-    return error_exist;
+    return 0;
 }
 
 int define_var(char* line){
@@ -280,7 +277,6 @@ int second_data_sort(){
             sscanf(binary_temp->data, "%s %s",line,word);
             if((label_temp = in_data_list(word,2)) != NULL){
                 if(strcmp(label_temp->type,".extern")==0){
-                    printf("The name is:%s",label_temp->name);
                     sprintf(binary_temp->data,"%s\t00000000000001",line);
                 }
                 else
