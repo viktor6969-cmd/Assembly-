@@ -112,12 +112,12 @@ int first_read(FILE* input_file,char* file_name){
         temp = temp->next;
     }
     printf("\n\n");
-
+    */
     while(binary_output_head!=NULL){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
-    */
+    
     if(error_exist > 0)
          return error_exist;
 
