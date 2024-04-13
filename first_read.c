@@ -113,10 +113,10 @@ int first_read(FILE* input_file,char* file_name){
     }
     printf("\n\n");
 
-    /*while(binary_output_head!=NULL){
+    while(binary_output_head!=NULL){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
-    }*/
+    }
     
     if(error_exist > 0)
          return error_exist;
@@ -275,18 +275,27 @@ int second_data_sort(){
 
     while (binary_temp != NULL)
     {
+        
         if(binary_temp->type == 'u'){
-            sscanf(binary_temp->data, "%s %s",line,word);
+            sscanf(binary_temp->data, "0%s %s",line,word);
             if((label_temp = in_data_list(word,2)) != NULL){
                 if(strcmp(label_temp->type,".extern")==0){
-                    sprintf(binary_temp->data,"%s\t00000000000001",line);
+                    sprintf(binary_temp->data,"0%s\t00000000000001",line);
+                    add_label(label_temp->name,".extern_use",line);
                 }
-                else
-                    sprintf(binary_temp->data,"%s\t%s10",line,string_to_binary(label_temp->data,12));
+                 
+                else{
+                    if((label_temp = in_data_list(word,2)) != NULL){
+                        if(strcmp(label_temp->type,".entry")==0)
+                            add_label(label_temp->name,".entry_use",line);
+
+                        sprintf(binary_temp->data,"0%s\t%s10",line,string_to_binary(label_temp->data,12));
+                    }
+                }
             }
             else {
                 printf("ERROR: Undefined Label:\'%s\'\n",word);
-                error_exist++;
+               /*error_exist++;*/
             }
         }
         binary_temp = binary_temp->next;
@@ -359,13 +368,27 @@ label* in_data_list(char* name,int data_flag){
     label_temp = label_list_head;
     while(label_temp!=NULL){
         if(strcmp(label_temp->name,name)==0){
-            if(data_flag==1)
-                return (strcmp(label_temp->type,"mdefine")==0 || strcmp(label_temp->type,".extern")==0)?(label_temp):(NULL);
-            if(data_flag ==2){
-                if(strcmp(label_temp->type,".entry")==0 || strcmp(label_temp->type,"entry_use")==0){
+            switch (data_flag)
+            {
+            case 1:
+            if(strcmp(label_temp->type,"mdefine")==0 || strcmp(label_temp->type,".extern")==0){
+                return label_temp;
+            }
+            break;
+            
+            case 2:
+            if((strcmp(label_temp->type,".entry")==0 || strcmp(label_temp->type,"entry_use")==0)){
                     label_temp = label_temp->next;
                     continue;
                 }
+            break;
+
+            case 3:
+            if((strcmp(label_temp->type,".entry")==0)){
+                return label_temp;
+            }
+            default:
+                break;
             }
             return label_temp;
         }
@@ -375,8 +398,6 @@ label* in_data_list(char* name,int data_flag){
 }
 
 int label_validation_check(char* name){ 
-
-    char word[50];
     switch(defenition_name_valid_check(name,label_list_head)){
 
         case 1:
@@ -398,18 +419,7 @@ int label_validation_check(char* name){
             printf("Error in line %d: The label '%s' can't be a number\n",rows++,name);
             error_exist++;
             break;
-
-        case 5:
-            sprintf(word, "%d", IC);
-            add_label(name,"external_use",word);
-            return 1;
-            break;
         
-        case 6:
-            sprintf(word, "%d", IC);
-            add_label(name,"entry_use",word);
-            return 1;
-            break;
     }    
     return 0;
 }

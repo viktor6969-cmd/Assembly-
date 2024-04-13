@@ -11,7 +11,6 @@ typedef struct commands{
 }commands;
 
 /*----------GLOBAL VARIABLES------------*/
-int opearnd_type(char* line);
 commands command_list[COMMAND_LIST_SIZE];
 char binary_line[MAX_BINARY_LINE_SIZE];
 label* temp;
@@ -21,6 +20,7 @@ int origin_rows;
 /*------------DECLARATIONS--------------*/
 int write_operand(int type,int IC, char* first);
 int command_number(char* name);
+int opearnd_type(char* line);
 
 /*--------------Functions---------------*/
 int command_sort(char* name,char* line,int IC,int rows){
@@ -32,6 +32,7 @@ int command_sort(char* name,char* line,int IC,int rows){
     *first_operand = '\0';
     *secnd_operand = '\0';
     origin_rows = rows;
+    
     if((comm_num = command_number(name)) < 0){ /*Return error if the command was not in the list*/
         printf("\x1b[31mError in line %d: Uncnown command: \'%s\'\x1b[0m\n",rows,command_list[comm_num].name);
         return -1;
@@ -146,7 +147,7 @@ int write_operand(int type,int IC,char* first){
         /*-----------ARRAY sort---------------*/
         case 2:
         sscanf(first, "%[^[][%[^]]]", temp_first, temp_second);
-        temp=in_data_list(temp_first,1);
+        temp=in_data_list(temp_first,2);
 
         /*If the Label name exist in Data list*/
         if(temp!=NULL){
@@ -155,7 +156,6 @@ int write_operand(int type,int IC,char* first){
         }
         else
             is_found = 0;
-
         sprintf(binary_line,"0%d\t%s",IC++,temp_first);
         add_binary_line(binary_line,'u',is_found);/*Add the first line, with the sort number*/
         temp=in_data_list(temp_second,0);

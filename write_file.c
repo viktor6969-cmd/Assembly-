@@ -37,7 +37,7 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
             fprintf(extern_output,"%s\t%s\n",label_temp->name,label_temp->data);
             fclose(extern_output);
         }
-        if(strcmp(label_temp->type,"entry_use")==0){
+        if(strcmp(label_temp->type,".entry_use")==0){
             sprintf(string_temp,"%s.ent",file_name);
             entry_output = fopen(string_temp,"a");
             fprintf(entry_output,"%s\t%s\n",label_temp->name,label_temp->data);
