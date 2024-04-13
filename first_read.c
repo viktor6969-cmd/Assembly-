@@ -107,7 +107,7 @@ int first_read(FILE* input_file,char* file_name){
     error_exist = second_data_sort();
 
     temp = label_list_head;
-    while(temp!=NULL){
+    /*while(temp!=NULL){
         printf("%s\t%s\t%s\n",temp->name,temp->type,temp->data);
         temp = temp->next;
     }
@@ -117,7 +117,7 @@ int first_read(FILE* input_file,char* file_name){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
-    
+    */
     if(error_exist > 0)
          return error_exist;
 
@@ -148,6 +148,7 @@ int define_var(char* line){
 
 int label_def(char* name,char* line){
 
+
     char first_word[MAX_LINE_SIZE];
     name[strlen(name) - 1] = '\0'; /*Remove the ':' char*/
     label_validation_check(name); /*Validation check*/
@@ -166,7 +167,9 @@ int label_def(char* name,char* line){
         return 0;
     }
 
-    sprintf(first_word,"%d",IC); /*Use the first_word variable, to send the curent code row*/ 
+    sprintf(first_word,"%d",IC); /*Use the first_word variable, to send the curent code row*/
+    
+    printf("Label:%s\n",name);
     add_label(name,".data",first_word); /*Add code label to the list*/
     sscanf(line, "%s", name);
     sscanf(line, "%*s %[^\n]", line);
@@ -270,12 +273,12 @@ int second_data_sort(){
 
     binary *binary_temp = binary_output_head;
     label *label_temp = NULL;
+    label *label_entry = NULL;
     char *word = malloc(MAX_BINARY_LINE_SIZE * sizeof(char));
     char *line = malloc(MAX_BINARY_LINE_SIZE * sizeof(char));
 
     while (binary_temp != NULL)
-    {
-        
+    {      
         if(binary_temp->type == 'u'){
             sscanf(binary_temp->data, "0%s %s",line,word);
             if((label_temp = in_data_list(word,2)) != NULL){
@@ -284,22 +287,32 @@ int second_data_sort(){
                     add_label(label_temp->name,".extern_use",line);
                 }
                  
-                else{
-                    if((label_temp = in_data_list(word,2)) != NULL){
-                        if(strcmp(label_temp->type,".entry")==0)
-                            add_label(label_temp->name,".entry_use",line);
-
-                        sprintf(binary_temp->data,"0%s\t%s10",line,string_to_binary(label_temp->data,12));
-                    }
-                }
+                else
+                    if((label_temp = in_data_list(word,2)) != NULL)
+                        sprintf(binary_temp->data,"0%s\t%s10",line,string_to_binary(label_temp->data,12));                  
             }
             else {
                 printf("ERROR: Undefined Label:\'%s\'\n",word);
-               /*error_exist++;*/
+                error_exist++;
             }
         }
         binary_temp = binary_temp->next;
     }
+    
+    label_temp = label_list_head;
+    while (label_temp!=NULL)
+    {
+        if(strcmp(label_temp->type,".entry")==0){
+            label_entry = in_data_list(label_temp->name,2);
+            if(label_entry!=NULL){
+                printf("Label name: %s , line:%s\n", label_entry->name,label_entry->data);
+                add_label(label_temp->name,".entry_use",label_entry->data);
+            }
+        }
+        label_temp = label_temp->next;
+    }
+    
+
     return error_exist;
 }
 

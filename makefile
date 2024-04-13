@@ -8,6 +8,5 @@ $(TARGET): $(OBJS)
 	$(FLAGS) -o $@ $^
 %.o: %.c $(HDRS)
 	$(FLAGS) -c -o $@ $<
-
 clean:
 	rm -f *.o myprog *.am *.ob *.ext *.ent

@@ -34,13 +34,13 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
         if(strcmp(label_temp->type,".extern_use")==0){
             sprintf(string_temp,"%s.ext",file_name);
             extern_output = fopen(string_temp,"a");
-            fprintf(extern_output,"%s\t%s\n",label_temp->name,label_temp->data);
+            fprintf(extern_output,"%s\t0%s\n",label_temp->name,label_temp->data);
             fclose(extern_output);
         }
         if(strcmp(label_temp->type,".entry_use")==0){
             sprintf(string_temp,"%s.ent",file_name);
             entry_output = fopen(string_temp,"a");
-            fprintf(entry_output,"%s\t%s\n",label_temp->name,label_temp->data);
+            fprintf(entry_output,"%s\t0%s\n",label_temp->name,label_temp->data);
             fclose(entry_output);
         }
         label_temp = label_temp->next;
