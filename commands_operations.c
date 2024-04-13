@@ -11,61 +11,193 @@ typedef struct commands{
 }commands;
 
 /*----------GLOBAL VARIABLES------------*/
-int find_operand(char* line,int num);
 commands command_list[COMMAND_LIST_SIZE];
 char binary_line[MAX_BINARY_LINE_SIZE];
+label* temp;
+int comm_num = -1;
+int origin_rows;
 
 /*------------DECLARATIONS--------------*/
+int write_operand(int type,int IC, char* first);
 int command_number(char* name);
+int opearnd_type(char* line);
 
 /*--------------Functions---------------*/
-int command_sort(char* name,char* line,int IC){
-    int comm_num;
+int command_sort(char* name,char* line,int IC,int rows){
+    char *first_operand = malloc(MAX_LINE_SIZE*(sizeof(char)));
+    char *secnd_operand = malloc(MAX_LINE_SIZE*(sizeof(char)));
+    int type1;
+    int type2;
     int temp;
-    char *frst_operand = malloc(2*(sizeof(char)));
-    char *scnd_operand = malloc(2*(sizeof(char)));
-    if((comm_num = command_number(name)) < 0) /*Return error if the command was not in the list*/
-        return 0;
-    sscanf(line, "%*s %[^\n]", line); /*Remuve the command name*/
-
-    if(command_list[comm_num].operands==0){/*Its eather hlt or rts command*/
-        sprintf(binary_line,"0%d\t0000%s000000",(IC+100),command_list[comm_num].binary_code);
-        add_binary_line(binary_line,'c',1);
-        return 1;/*1  line was added*/
+    *first_operand = '\0';
+    *secnd_operand = '\0';
+    origin_rows = rows;
+    
+    if((comm_num = command_number(name)) < 0){ /*Return error if the command was not in the list*/
+        printf("\x1b[31mError in line %d: Uncnown command: \'%s\'\x1b[0m\n",rows,command_list[comm_num].name);
+        return -1;
     }
-
-    if(command_list[comm_num].operands==1){
-        switch(find_operand(line,comm_num)){
-
-            case 1:
-                sprintf(binary_line,"0%d\t0000%s000000",((IC++)+100),command_list[comm_num].binary_code);
-                add_binary_line(binary_line,'c',1);
-                sprintf(binary_line,"0%d\t%s00",((IC++)+100),string_to_binary(&line[1],12));
-                add_binary_line(binary_line,'c',1);
-                break;
-
-        }
-
-    }
-    sscanf(line, "%s", frst_operand);
-    sscanf(line, "%*s %s", scnd_operand);
-    sprintf(binary_line,"0%d\t0000%s%s%s00",(IC+100),command_list[comm_num].binary_code, frst_operand,scnd_operand);
-    add_binary_line(binary_line,'c',1);
-    return 1;
-}
-
-int find_operand(char* name,int num){
-    printf("the name:%s\n",name);
-    if(name[0]=='#'){
-        if(is_number(&name[1])){
-            printf("the number is:%s\n",&name[1]);
+    /*-----------The are no variables------------*/
+    if(strcmp(name,line)==0){
+        if((strcmp(name,"hlt")==0)||(strcmp(name,"not")==0)){
+            sprintf(binary_line,"0%d\t0000%s000000",IC++,command_list[comm_num].binary_code);
+            add_binary_line(binary_line,'h',1);
             return 1;
         }
+    }
+
+    /*------------Two variables-------------------*/
+    if(sscanf(line, "%[^,],%s", first_operand, secnd_operand)==2){
+        type1 = opearnd_type(first_operand);
+        type2 = opearnd_type(secnd_operand);
+
+        if(type1 == 3 && type2 ==3){
+            sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11","11");
+            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
+            sprintf(binary_line,"0%d\t000000%s%s00",IC++,string_to_binary(&first_operand[1],3),string_to_binary(&secnd_operand[1],3));
+            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+            return 2;
+        }
+        
+        if(type1 == 3){
+            sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11",num_to_binary(type2,2));
+            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
+            sprintf(binary_line,"0%d\t000000%s00000",IC++,string_to_binary(&first_operand[1],3));
+            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+            return 2+(write_operand(type2,IC,secnd_operand));/* Add the additional*/
+        }
+
+        if(type2 == 3){
+            sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type2,2),"11");
+            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
+            sprintf(binary_line,"0%d\t000000000%s00",IC++,string_to_binary(&first_operand[1],3));
+            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+            return 2+(write_operand(type1,IC,first_operand));/* Add the additional*/
+        }
+        
+        sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2),num_to_binary(type2,2));
+        add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
+        temp = (write_operand(type1,IC,first_operand));
+        IC += temp;
+        return 1+ temp + (write_operand(type2,IC,secnd_operand)); 
+    }     
+    /*------------One variable--------------------*/
+    else{
+        type1 = opearnd_type(first_operand);
+        if(type1 == 3){ /*Register sort*/
+            sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2));
+            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
+            sprintf(binary_line,"0%d\t000000000%s00",IC++,string_to_binary(&first_operand[1],3));
+            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+            return 2;
+        }
+        sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(opearnd_type(first_operand),2));
+        add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
+        return 1+ (write_operand(opearnd_type(first_operand),IC,first_operand));/* Add the additional lines*/
     }
     
     return 0;
 }
- 
+
+int write_operand(int type,int IC,char* first){
+    char *temp_first = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
+    char *temp_second = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
+    int is_found;
+    is_found = 0;
+    switch(type){
+
+        case 0:/*Immidiate sort*/
+        if((temp=in_data_list(&first[1],1))!=NULL){  
+            if(strcmp(temp->type,"mdefine")==0){
+               
+                sprintf(binary_line,"0%d\t%s00",IC,string_to_binary(temp->data,12));
+                add_binary_line(binary_line,'d',1);
+                return 1;
+            }
+            printf("\x1b[31mError in line %d:Can not use: \'%s\' as variable for \'%s\'\x1b[0m\n",origin_rows,&first[1],command_list[comm_num].name);
+            return 1;
+        }
+        
+        if((strlen(first)>=1) && is_number(&first[1])){
+            sprintf(binary_line,"0%d\t%s00",IC++,string_to_binary(&first[1],12));
+            add_binary_line(binary_line,'n',1);
+            return 1;
+        }
+        return -1;
+        
+        /*-----------Direct sort---------------*/
+        case 1:
+        temp = in_data_list(first,0);
+        if(temp != NULL){
+            if(strcmp(temp->type,".extern")==0){
+                sprintf(temp_first, "%d",IC);
+                add_label(first,".extern_use",temp_first);
+                sprintf(binary_line, "0%d\t00000000000001",IC);
+                add_binary_line(binary_line,'e',1);
+                return 1;
+            }
+        }
+        /*If label not defined yet, put him as he is*/
+        sprintf(binary_line,"0%d\t%s",IC++,first);
+        add_binary_line(binary_line,'u',is_found);
+        return 1;
+        
+        
+        
+        /*-----------ARRAY sort---------------*/
+        case 2:
+        sscanf(first, "%[^[][%[^]]]", temp_first, temp_second);
+        temp=in_data_list(temp_first,2);
+
+        /*If the Label name exist in Data list*/
+        if(temp!=NULL){
+            sprintf(temp_first,string_to_binary(temp->data,12));
+            is_found = 1;
+        }
+        else
+            is_found = 0;
+        sprintf(binary_line,"0%d\t%s",IC++,temp_first);
+        add_binary_line(binary_line,'u',is_found);/*Add the first line, with the sort number*/
+        temp=in_data_list(temp_second,0);
+
+        /*If the index name exist in data list*/
+        if(temp!=NULL){
+            sprintf(temp_second,string_to_binary(temp->data,12));
+            is_found = 1;
+        }
+        else if(is_number(temp_second)){
+                sprintf(temp_second,string_to_binary(temp_second,12));
+                is_found = 1;
+                }
+            else
+                is_found = 0;
+        sprintf(binary_line,"0%d\t%s00",IC++,temp_second);
+        add_binary_line(binary_line,'i',is_found);/*Add the first line, with the sort number*/
+        return 2;
+        
+        /*If the label is undefined, put his name in the line*/
+        case 4:
+            sprintf(binary_line,"0%d\t%s",IC++,first);
+            add_binary_line(binary_line,'u',0);/*Add the first line, with the sort number*/
+            return 1;
+    }
+    return 0;
+}
+
+int opearnd_type (char* name){
+    char label[MAX_LABEL_NAME_SIZE];
+    char index[MAX_LABEL_NAME_SIZE];
+    /*printf("Find operand:%s\n",name);*/
+    if(name[0]=='#')
+        return 0;
+    if(is_register(name))
+        return 3;
+    if (sscanf(name,"%[^[][%[^]]]",label,index) == 2) {
+        return 2;
+    }
+    return 1; /*Undefined label*/
+}
+
 int make_command_list(){ /*Make space for new command list*/
 
     int i;
@@ -83,7 +215,7 @@ int make_command_list(){ /*Make space for new command list*/
         strcpy(command_list[i].name, names[i]);
         strcpy(command_list[i].binary_code,num_to_binary(i,4));
         if(i<=13)
-            command_list[i].operands=(i<=8 ? 2:1);
+            command_list[i].operands=((i<4 || i == 6) ? 2:1);
         else 
             command_list[i].operands=0;
     }

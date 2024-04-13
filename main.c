@@ -42,11 +42,10 @@ int main(int argc, char *argv[]){
         }
 
         /*------------First file read---------------*/
-        errors += first_read(file);
+        errors += first_read(file,argv[i]);
         if(errors > 0)
             printf("\x1b[31mThere are %d errors in the sourcse file, outputile wasn't created\x1b[0m\n",errors);
         /*compile_to_binary(macro_file);*/
-
         fclose(file);
     }
     free_command_list();
