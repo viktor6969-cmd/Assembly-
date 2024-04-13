@@ -168,8 +168,6 @@ int label_def(char* name,char* line){
     }
 
     sprintf(first_word,"%d",IC); /*Use the first_word variable, to send the curent code row*/
-    
-    printf("Label:%s\n",name);
     add_label(name,".data",first_word); /*Add code label to the list*/
     sscanf(line, "%s", name);
     sscanf(line, "%*s %[^\n]", line);
@@ -305,7 +303,7 @@ int second_data_sort(){
         if(strcmp(label_temp->type,".entry")==0){
             label_entry = in_data_list(label_temp->name,2);
             if(label_entry!=NULL){
-                printf("Label name: %s , line:%s\n", label_entry->name,label_entry->data);
+
                 add_label(label_temp->name,".entry_use",label_entry->data);
             }
         }

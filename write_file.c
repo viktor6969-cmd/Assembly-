@@ -4,13 +4,14 @@
 #include "header.h"
 
 /*------------DECLARATIONS--------------*/
+char* translate(char* line);
+char* weird_code(char* base4);
 
-/*----------GLOBAL VARIABLES------------*/
-
-
+/*-------------FUNCTIONS----------------*/
 int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
 
     char* string_temp = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
+    char* line = malloc(4*sizeof(char));
     binary* binary_temp = binary_list;
     label* label_temp = label_list;
     FILE* binary_output = NULL;
@@ -25,7 +26,8 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
     }
 
     while(binary_temp!=NULL){
-        fprintf(binary_output,"%s\n",binary_temp->data);
+        sscanf(binary_temp->data,"%s %s",line,string_temp);
+        fprintf(binary_output,"%s\t%s\n",line,translate(string_temp));
         binary_temp = binary_temp->next;
     }
 
@@ -48,4 +50,49 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
     
     fclose(binary_output);
     return 0;
+}
+
+char* translate(char* binary) {
+
+    int i;
+    int val;
+    int base4_len = 7; 
+    char* base4 = malloc(14*sizeof(char)); 
+    char lookup[] = {'0', '1', '2', '3'};
+    if (!base4) {
+        printf("Memory allocation failed\n");
+        return NULL;
+    }
+ 
+    for (i = 0; i < base4_len; i++) {
+        val = (binary[2*i] - '0') * 2 + (binary[2*i + 1] - '0');
+        base4[i] = lookup[val];
+    }
+    base4[base4_len] = '\0'; 
+    return weird_code(base4);
+}
+
+char* weird_code(char* base4) {
+    int i;
+    int digit;
+    int base4_len = strlen(base4);
+    char* weird = (char*)malloc(base4_len + 1); 
+    char mapping[] = {'*', '#', '%', '!'};
+    if (!weird) {
+        printf("Memory allocation failed\n");
+        return NULL;
+    }
+    
+    for (i = 0; i < base4_len; i++) {
+        digit = base4[i] - '0';
+        if (digit < 0 || digit > 3) {
+            free(weird);
+            printf("Invalid base-4 input: %c\n", base4[i]);
+            return NULL;
+        }
+        weird[i] = mapping[digit];
+    }
+    weird[base4_len] = '\0'; 
+
+    return weird;
 }
