@@ -106,19 +106,21 @@ int first_read(FILE* input_file,char* file_name){
     
     error_exist = second_data_sort();
 
-    while(label_list_head!=NULL){
-        printf("%s\t%s\t%s\n",label_list_head->name,label_list_head->type,label_list_head->data);
-        label_list_head = label_list_head->next;
+    temp = label_list_head;
+    while(temp!=NULL){
+        printf("%s\t%s\t%s\n",temp->name,temp->type,temp->data);
+        temp = temp->next;
     }
     printf("\n\n");
 
-    while(binary_output_head!=NULL){
+    /*while(binary_output_head!=NULL){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
-    }
+    }*/
     
     if(error_exist > 0)
          return error_exist;
+
     printf_binary_files(binary_output_head,label_list_head,file_name);
     free_labels_list();
     return 0;
