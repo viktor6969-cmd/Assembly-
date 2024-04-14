@@ -3,10 +3,8 @@
 #include <string.h>
 #include "header.h"
 
-/*-------------STRUCTERS----------------*/
-
 /*------------DECLARATIONS--------------*/
-int add_string_node(char* name,char* line);
+int add_string_node(char* name,char* line); /*Adds a string data to the commands list */
 int add_data_node(char* name,char* line);
 int label_validation_check(char* name);
 int label_def(char* name,char* line);
@@ -48,16 +46,18 @@ int first_read(FILE* input_file,char* file_name){
             rows++;
             continue;
         }
-        
-        /*-----------Check if variable definition-------------------*/
+        /*Check the first word for:*/
+
+        /*-----------Variable definition-------------------*/
         if(strcmp(first_word,".define")==0){
             define_var(line);
             rows++;
             continue;
         }
         
-        /*------------Check if extern definition--------------------*/
-        temp = in_data_list(first_word,0); /*Cheack if it's a Label*/
+        temp = in_data_list(first_word,0); 
+
+        /*------------Extern definition--------------------*/
         if(strcmp(first_word,".extern")==0){
             sscanf(line, "%*s %s", first_word);
             
@@ -65,43 +65,44 @@ int first_read(FILE* input_file,char* file_name){
                 add_label(first_word,".extern","");
             }
             else{
-                printf("ERROR in row %d:Double defenition for:%s\n",rows,first_word);
+                printf("%s: Error at row %d:Double defenition for:%s\n",file_name_glob,rows,first_word);
                 error_exist=1;
             }
             rows++;
             continue;
         }
         
-        /*-------------Check if entry defenition--------------------*/
+        /*-------------Entry defenition--------------------*/
         if(strcmp(first_word,".entry")==0){
             sscanf(line, "%*s %s", first_word);
             if(temp==NULL || (strcmp(temp->type,".entry")==0)){
                 add_label(first_word,".entry","");
             }
             else{
-                printf("ERROR in row %d:Double defenition for:%s\n",rows,first_word);
+                printf("%s: Error at row %d:Double defenition for:%s\n",file_name_glob,rows,first_word);
                 error_exist++;
             }
             rows++;
             continue;
         }
         
-        /*---------------------Check if label-----------------------*/
+        /*---------------Label defenition-----------------------*/
         if((first_word[strlen(first_word)-1]) == ':'){
             
-            rows+=label_def(first_word,line);
+            label_def(first_word,line);
+            rows++;
             continue;
         }
         
         /*---------------------Check if comand ---------------------*/
         sscanf(line, "%*s %[^\n]", line);
-        temp_num=command_sort(first_word,line,IC,rows);
+        temp_num=command_sort(first_word,line,IC,rows,file_name);
         if(temp_num > 0){
             IC+=temp_num;
             rows++;
             continue;
         }
-        /*If there any error (witch represented with negativa values) add it to error counter by making them positive*/
+        /*If there any error (witch represented with negative values) add it to error counter by making them positive*/
         error_exist+=(temp_num*-1); 
         rows++;
     }
@@ -139,12 +140,11 @@ int define_var(char* line){
     /*-----------Validation check--------------*/
     label_validation_check(first_word);
     if(!is_number(second_word)){
-        printf("Error in file: \'%s\' row %d:The value '%s' must be an integer number \n",rows++,second_word);
+        printf("%s: Error at row %d:The value '%s' must be an integer number \n",file_name_glob,rows++,second_word);
         error_exist++;
     }
     /*-------Add variable to labels list---------*/
     add_label(first_word,"mdefine",second_word);
-    rows++; /*Encrease the rows number*/
     return error_exist;
 }
 
@@ -173,7 +173,7 @@ int label_def(char* name,char* line){
     add_label(name,".data",first_word); /*Add code label to the list*/
     sscanf(line, "%s", name);
     sscanf(line, "%*s %[^\n]", line);
-    temp_num=command_sort(name,line,IC,rows);
+    temp_num=command_sort(name,line,IC,rows,file_name_glob);
     if(temp_num>0)
         IC+=temp_num;
     else
@@ -197,8 +197,8 @@ int add_string_node(char* name,char* line){
             continue;
         }
         else{
-            printf("ERROR in row %d:Invalid char '%c' \n",rows,line[i]);
-            return 1;
+            printf("%s: Error at row %d:Invalid char '%c' \n",file_name_glob,rows,line[i]);
+            return -1;
         }
     }
     sprintf(temp,"0%d\t",IC+DC);/*Add zero to the rows number*/
@@ -221,11 +221,11 @@ int add_data_node(char* name,char* line){
 
             if((line[i])==','){
                 if((i+1) == strlen(line)){
-                    printf("ERROR in file: \'%s\' row %d: line: %s \nMissing argument after \',\' in data declaration",file_name_glob,rows,line);
+                    printf("%s: Error at row %d: line: %s \nMissing argument after \',\' in data declaration",file_name_glob,rows,line);
                     return 1;
                 }
                 if((line[i+1]==',')){
-                    printf("ERROR in file: \'%s\' row %d: line: %s \nDubble \',\' char in data declaration",file_name_glob,rows,line);
+                    printf("%s: Error at row %d: line: %s \nDubble \',\' char in data declaration",file_name_glob,rows,line);
                     return 1;
                 }
                 if(is_number(word)){ /*If it's a number add him*/
@@ -245,7 +245,7 @@ int add_data_node(char* name,char* line){
                     continue;
                 }
                 else{
-                    printf("ERROR in file:%s row %d: '%s' \nInvalid input\n",file_name_glob, rows,word);
+                    printf("%s: Error at row %d: '%s' \nInvalid input\n",file_name_glob, rows,word);
                     return 1;
                 }
                     
@@ -274,8 +274,8 @@ int second_data_sort(){
     binary *binary_temp = binary_output_head;
     label *label_temp = NULL;
     label *label_entry = NULL;
-    char *word = malloc(MAX_BINARY_LINE_SIZE * sizeof(char));
-    char *line = malloc(MAX_BINARY_LINE_SIZE * sizeof(char));
+    char *word = (char*)calloc(MAX_BINARY_LINE_SIZE, sizeof(char));
+    char *line = (char*)calloc(MAX_BINARY_LINE_SIZE, sizeof(char));
 
     while (binary_temp != NULL)
     {      
@@ -292,7 +292,7 @@ int second_data_sort(){
                         sprintf(binary_temp->data,"0%s\t%s10",line,string_to_binary(label_temp->data,12));                  
             }
             else {
-                printf("ERROR: Undefined Label:\'%s\'\n",word);
+                printf("%s: Error: Undefined Label:\'%s\'\n",file_name_glob,word);
                 error_exist++;
             }
         }
@@ -414,22 +414,22 @@ int label_validation_check(char* name){
     switch(defenition_name_valid_check(name,label_list_head)){
 
         case 1:
-            printf("Error in line %d: Multiple definitions of label '%s'\n",rows++,name);
+            printf("%s: Error at row %d: Multiple definitions of label '%s'\n",file_name_glob,rows++,name);
             error_exist++;
             break;
 
         case 2:
-            printf("Error in line %d: The label '%s' can't have a name of assembly command\n",rows++,name);
+            printf("%s: Error at row %d: The label '%s' can't have a name of assembly command\n",file_name_glob,rows++,name);
             error_exist++;
             break;
 
         case 3:
-            printf("Error in line %d: The label '%s' can't be a register name\n",rows++,name);
+            printf("%s: Error at row %d: The label '%s' can't be a register name\n",file_name_glob,rows++,name);
             error_exist++;
             break;
 
         case 4:
-            printf("Error in line %d: The label '%s' can't be a number\n",rows++,name);
+            printf("%s: Error at row %d: The label '%s' can't be a number\n",file_name_glob,rows++,name);
             error_exist++;
             break;
         

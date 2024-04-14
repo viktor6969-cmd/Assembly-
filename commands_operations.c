@@ -13,6 +13,7 @@ typedef struct commands{
 /*----------GLOBAL VARIABLES------------*/
 commands command_list[COMMAND_LIST_SIZE];
 char binary_line[MAX_BINARY_LINE_SIZE];
+char* file_name_global;
 label* temp;
 int comm_num = -1;
 int origin_rows;
@@ -23,42 +24,59 @@ int command_number(char* name);
 int opearnd_type(char* line);
 
 /*--------------Functions---------------*/
-int command_sort(char* name,char* line,int IC,int rows){
-    char *first_operand = malloc(MAX_LINE_SIZE*(sizeof(char)));
-    char *secnd_operand = malloc(MAX_LINE_SIZE*(sizeof(char)));
+int command_sort(char* name,char* line,int IC,int rows,char* file_name){
+    char *first_operand = (char*)calloc(MAX_LINE_SIZE, sizeof(char));
+    char *secnd_operand = (char*)calloc(MAX_LINE_SIZE, sizeof(char));
     int type1;
     int type2;
     int temp;
+
     *first_operand = '\0';
     *secnd_operand = '\0';
     origin_rows = rows;
     
-    if((comm_num = command_number(name)) < 0){ /*Return error if the command was not in the list*/
-        printf("\x1b[31mError in line %d: Uncnown command: \'%s\'\x1b[0m\n",rows,command_list[comm_num].name);
+    /*-------Check if command exist in command list------------*/
+    if((comm_num = command_number(name)) < 0){ /*Return error if not*/
+        printf("%s: Error at row %d: Uncnown command: '%s'\n",file_name,rows,command_list[comm_num].name);
         return -1;
     }
-    /*-----------The are no variables------------*/
+    /*-----------There are no variables------------*/
     if(strcmp(name,line)==0){
+
+        /*-----If the command is hlt or not, add to output binary list ------- */
         if((strcmp(name,"hlt")==0)||(strcmp(name,"not")==0)){
             sprintf(binary_line,"0%d\t0000%s000000",IC++,command_list[comm_num].binary_code);
             add_binary_line(binary_line,'h',1);
             return 1;
         }
+        /*------If not, return an error---------*/
+        else{
+            printf("%s: Error at row %d: Uncnown command: \'%s\'\x1b[0m\n",file_name,rows,command_list[comm_num].name);
+            return -1;
+        }
     }
 
-    /*------------Two variables-------------------*/
+    /*-----Check how meny variables can we read from the line ----------*/
     if(sscanf(line, "%[^,],%s", first_operand, secnd_operand)==2){
         type1 = opearnd_type(first_operand);
         type2 = opearnd_type(secnd_operand);
 
+    /*----------Check the valid operands amount-----------*/
+        if(command_list[comm_num].operands!=2){
+            printf("%s: Error at row %d: %d operand expected for '%s'\n", file_name, rows,command_list[comm_num].operands, command_list[comm_num].name);
+            return -1;
+        }
+
+    /*--If both operands are registers put them in one line --*/
         if(type1 == 3 && type2 ==3){
             sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11","11");
-            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
+            add_binary_line(binary_line,'c',1);/*Add the first line, with both operand sotr numbers 11*/
             sprintf(binary_line,"0%d\t000000%s%s00",IC++,string_to_binary(&first_operand[1],3),string_to_binary(&secnd_operand[1],3));
-            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+            add_binary_line(binary_line,'r',1);/*Add the second line, with both registers numbers*/
             return 2;
         }
         
+    /*----If only the first, add him , and then send the second one to 'write operand' function---*/
         if(type1 == 3){
             sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11",num_to_binary(type2,2));
             add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
@@ -66,7 +84,7 @@ int command_sort(char* name,char* line,int IC,int rows){
             add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
             return 2+(write_operand(type2,IC,secnd_operand));/* Add the additional*/
         }
-
+    /*----Do the same but with second operand instead---*/
         if(type2 == 3){
             sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type2,2),"11");
             add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
@@ -74,15 +92,22 @@ int command_sort(char* name,char* line,int IC,int rows){
             add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
             return 2+(write_operand(type1,IC,first_operand));/* Add the additional*/
         }
-        
+    
+    /*---If there no register sort, send both operands to 'write' function, and add sort numbers to the first command*/
         sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2),num_to_binary(type2,2));
         add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
         temp = (write_operand(type1,IC,first_operand));
         IC += temp;
         return 1+ temp + (write_operand(type2,IC,secnd_operand)); 
     }     
-    /*------------One variable--------------------*/
+
+    /*------------If there only one operand--------------------*/
     else{
+
+        if(command_list[comm_num].operands!=1){
+            printf("%s: Error at row %d: %d operands expected for '%s' command\n", file_name, rows,command_list[comm_num].operands, command_list[comm_num].name);
+            return -1;
+        }
         type1 = opearnd_type(first_operand);
         if(type1 == 3){ /*Register sort*/
             sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2));
@@ -100,8 +125,8 @@ int command_sort(char* name,char* line,int IC,int rows){
 }
 
 int write_operand(int type,int IC,char* first){
-    char *temp_first = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
-    char *temp_second = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
+    char *temp_first = (char*)calloc(MAX_LABEL_NAME_SIZE, sizeof(char));
+    char *temp_second = (char*)calloc(MAX_LABEL_NAME_SIZE, sizeof(char));
     int is_found;
     is_found = 0;
     switch(type){
@@ -114,7 +139,7 @@ int write_operand(int type,int IC,char* first){
                 add_binary_line(binary_line,'d',1);
                 return 1;
             }
-            printf("\x1b[31mError in line %d:Can not use: \'%s\' as variable for \'%s\'\x1b[0m\n",origin_rows,&first[1],command_list[comm_num].name);
+            printf("%s: Error at row %d:Can not use: \'%s\' as variable for \'%s\'\n",file_name_global,origin_rows,&first[1],command_list[comm_num].name);
             return 1;
         }
         
@@ -205,8 +230,8 @@ int make_command_list(){ /*Make space for new command list*/
     
     for(i = 0;i < COMMAND_LIST_SIZE; i++){
         /*---------Alocate memmory for the data-------------*/
-        command_list[i].name = malloc( 3 * sizeof(char)); /* Max command length=3*/
-        command_list[i].binary_code = malloc(4 * sizeof(char));
+        command_list[i].name = (char*)calloc(3, sizeof(char));; /* Max command length=3*/
+        command_list[i].binary_code = (char*)calloc(4, sizeof(char));
         if (command_list[i].binary_code == NULL || command_list[i].name == NULL ) {
             print_error("Error allocating memory for command list");
             return -1;
@@ -234,7 +259,7 @@ int command_number(char* name){
 char* command_code(char* name){
     int i;
     char* binary;
-    binary = malloc(4*sizeof(char));
+    binary =(char*)calloc(4, sizeof(char));
     strcpy(binary,"");
     for(i=0;i<COMMAND_LIST_SIZE;i++)
         if(strcmp(name,command_list[i].name)==0)

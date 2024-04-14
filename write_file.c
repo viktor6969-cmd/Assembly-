@@ -58,7 +58,7 @@ char* translate(char* binary) {
     int i;
     int val;
     int base4_len = 7; 
-    char* base4 = malloc(14*sizeof(char)); 
+    char* base4 = (char*)calloc(14, sizeof(char));
     char lookup[] = {'0', '1', '2', '3'};
     if (!base4) {
         printf("Memory allocation failed\n");
@@ -94,6 +94,5 @@ char* weird_code(char* base4) {
         weird[i] = mapping[digit];
     }
     weird[base4_len] = '\0'; 
-    printf("Line:%s\n",weird);
     return weird;
 }
