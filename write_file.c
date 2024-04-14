@@ -27,6 +27,7 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
 
     while(binary_temp!=NULL){
         sscanf(binary_temp->data,"%s %s",line,string_temp);
+        
         fprintf(binary_output,"%s\t%s\n",line,translate(string_temp));
         binary_temp = binary_temp->next;
     }
@@ -93,6 +94,6 @@ char* weird_code(char* base4) {
         weird[i] = mapping[digit];
     }
     weird[base4_len] = '\0'; 
-
+    printf("Line:%s\n",weird);
     return weird;
 }

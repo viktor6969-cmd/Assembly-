@@ -19,6 +19,7 @@ binary* binary_output_curent = NULL;
 binary* binary_output_head = NULL;
 label* label_list_curent = NULL;
 label* label_list_head = NULL;
+char* file_name_glob;
 int error_exist;
 int temp_num;
 int rows;
@@ -31,6 +32,7 @@ int first_read(FILE* input_file,char* file_name){
     label* temp;
     char line[MAX_LINE_SIZE];
     char first_word[MAX_LINE_SIZE];
+    file_name_glob = file_name;
     error_exist = 0;
     rows = 1;
     IC = 100;
@@ -112,12 +114,12 @@ int first_read(FILE* input_file,char* file_name){
         temp = temp->next;
     }
     printf("\n\n");
-    */
+    
     while(binary_output_head!=NULL){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
-    
+    */
     if(error_exist > 0)
          return error_exist;
 
@@ -137,7 +139,7 @@ int define_var(char* line){
     /*-----------Validation check--------------*/
     label_validation_check(first_word);
     if(!is_number(second_word)){
-        printf("Error in line %d:The value '%s' must be an integer number \n",rows++,second_word);
+        printf("Error in file: \'%s\' row %d:The value '%s' must be an integer number \n",rows++,second_word);
         error_exist++;
     }
     /*-------Add variable to labels list---------*/
@@ -219,11 +221,11 @@ int add_data_node(char* name,char* line){
 
             if((line[i])==','){
                 if((i+1) == strlen(line)){
-                    printf("ERROR in row %d: line: %s \nMissing argument after \',\' in data declaration",rows,line);
+                    printf("ERROR in file: \'%s\' row %d: line: %s \nMissing argument after \',\' in data declaration",file_name_glob,rows,line);
                     return 1;
                 }
                 if((line[i+1]==',')){
-                    printf("ERROR in row %d: line: %s \nDubble \",\" char in data declaration",rows,line);
+                    printf("ERROR in file: \'%s\' row %d: line: %s \nDubble \',\' char in data declaration",file_name_glob,rows,line);
                     return 1;
                 }
                 if(is_number(word)){ /*If it's a number add him*/
@@ -243,7 +245,7 @@ int add_data_node(char* name,char* line){
                     continue;
                 }
                 else{
-                    printf("ERROR in row %d: '%s' \nInvalid input\n",rows,word);
+                    printf("ERROR in file:%s row %d: '%s' \nInvalid input\n",file_name_glob, rows,word);
                     return 1;
                 }
                     
@@ -317,7 +319,7 @@ int second_data_sort(){
 
 int add_label(char* name,char* type,char* data){
 
-    label* new_label = malloc(sizeof(label));
+    label* new_label = (label*)calloc(1, sizeof(label));;
     if (new_label == NULL){ 
         print_error("Error allocating memory for the data tabel");
         error_exist++;
@@ -325,11 +327,11 @@ int add_label(char* name,char* type,char* data){
     }
 
     /*-------Allocate memory and fill it---------*/
-    new_label->name = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
+    new_label->name = (char*)calloc(MAX_LABEL_NAME_SIZE, sizeof(char));
     strcat(new_label->name, name); /*Set the name*/
-    new_label->type = malloc(MAX_LINE_SIZE * sizeof(char));
+    new_label->type = (char*)calloc(MAX_LINE_SIZE, sizeof(char));
     strcat(new_label->type, type); /*Set the type to mdefine*/
-    new_label->data = malloc(MAX_LINE_SIZE * sizeof(char));
+    new_label->data = (char*)calloc(MAX_LINE_SIZE, sizeof(char));;
     strcat(new_label->data, data);/*Write the data*/
     new_label->next = NULL;
 
@@ -346,13 +348,13 @@ int add_label(char* name,char* type,char* data){
 }
 
 int add_binary_line(char* data,char type, int finished){
-    binary* new_binary_line = malloc(sizeof(binary));
+    binary* new_binary_line = (binary*)calloc(1,sizeof(binary));
     if (new_binary_line == NULL){ 
         print_error("Error allocating memory for the data tabel");
         error_exist ++;
         return 1;
     }
-    new_binary_line->data = malloc(MAX_BINARY_LINE_SIZE*sizeof(char));
+    new_binary_line->data = (char*)calloc(MAX_BINARY_LINE_SIZE, sizeof(char));
     strcat(new_binary_line->data,data);
     new_binary_line->finished = finished;
     new_binary_line->type = type;
