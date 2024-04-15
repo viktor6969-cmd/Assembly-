@@ -1,9 +1,8 @@
 ; file ps.as
 .entry LIST
-STR: .string “abcdef”
 .extern W
 .define sz = 2
-MAIN: mov r3, LIST[sz]
+MAIN: mov r3[2], LIST[sz]
 LOOP: jmp W
  prn #-5
  mov STR[5], STR[2]
@@ -15,6 +14,10 @@ L1: inc L3
  bne LOOP
 END: hlt
 .define len = 4
+
+
+
 LIST: .data 6, -9, len
+STR: .string “abcdef”
 K: .data 22
 .extern L3 
