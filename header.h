@@ -50,7 +50,7 @@ char* command_code(char* name);
 int command_sort(char* name,char* line,int IC,int rows,char* file_name);
 
 /*-----------Write_file functions------------*/
-int printf_binary_files(binary *binary_list,label *label_list,char* file_name); 
+int printf_binary_files(binary *binary_list,label *label_list,char* file_name,int IC,int DC); 
 
 
 

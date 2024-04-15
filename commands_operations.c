@@ -20,6 +20,7 @@ int origin_rows;
 
 /*------------DECLARATIONS--------------*/
 int write_operand(int type,int IC, char* first);
+int operands_use_valid(int comm_num,int type1, int type2);
 int command_line_check(char* line);
 int command_number(char* name);
 int opearnd_type(char* line);
@@ -57,11 +58,18 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
 
         /*Comand validation check*/
         if(command_list[comm_num].operands!=1){
-            printf("%s: Error at row %d: %d operands expected for '%s' command\n", file_name, rows,command_list[comm_num].operands, command_list[comm_num].name);
+            printf("%s: Error at row %d: operands expected for '%s' command\n", file_name, rows, command_list[comm_num].name);
             return -1;
         }
+        
         sscanf(line, "%s", first_operand);
         type1 = opearnd_type(first_operand);
+        
+        if(operands_use_valid(comm_num,type1,-1)){
+                printf("%s: Error at row %d: invalid operads type for '%s' command\n",file_name,rows,command_list[comm_num].name);
+                return -1;
+            }
+
         if(type1 == 3){ /*Register sort*/
             sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2));
             add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
@@ -80,6 +88,11 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
             sscanf(line, "%[^,],%s", first_operand, secnd_operand);
             type1 = opearnd_type(first_operand);
             type2 = opearnd_type(secnd_operand);
+
+            if(operands_use_valid(comm_num,type1,type2)){
+                printf("%s: Error at row %d: invalid operads type for '%s' command\n",file_name,rows,command_list[comm_num].name);
+                return -1;
+            }
 
         /*----------Check the valid operands amount-----------*/
             if(command_list[comm_num].operands!=2){
@@ -142,7 +155,7 @@ int write_operand(int type,int IC,char* first){
             if(strcmp(temp->type,"mdefine")==0){
                
                 sprintf(binary_line,"0%d\t%s00",IC,string_to_binary(temp->data,12));
-                add_binary_line(binary_line,'d',1);
+                add_binary_line(binary_line,'D',1);
                 return 1;
             }
             printf("%s: Error at row %d:Can not use: \'%s\' as variable for \'%s\'\n",file_name_global,origin_rows,&first[1],command_list[comm_num].name);
@@ -293,4 +306,18 @@ void free_command_list() { /*Clean the memmory alocated to command list */
         if (command_list[i].binary_code != NULL) 
             free(command_list[i].binary_code);
     }
+}
+
+int operands_use_valid(int comm_num,int type1, int type2){
+
+        if(type2 == -1){ /*We have only one operand*/
+            if(type1 == 0 && comm_num != 12)
+                return 1;
+            
+            if(type1 == 2 &&(comm_num == 13 || comm_num == 10 || comm_num == 19))
+                return 1;
+
+            
+        }
+    return 0;
 }

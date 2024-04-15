@@ -8,7 +8,7 @@ char* translate(char* line);
 char* weird_code(char* base4);
 
 /*-------------FUNCTIONS----------------*/
-int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
+int printf_binary_files(binary *binary_list,label *label_list,char* file_name,int IC,int DC){
 
     char* string_temp =(char*)calloc(MAX_LABEL_NAME_SIZE, sizeof(char));
     char* line = (char*)calloc(4, sizeof(char));
@@ -25,6 +25,7 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
         return -1;
     }
 
+    fprintf(binary_output,"  %d\t%d\n",IC,DC);
     while(binary_temp!=NULL){
         sscanf(binary_temp->data,"%s %s",line,string_temp);
         
