@@ -10,6 +10,7 @@ int label_validation_check(char* name);
 int label_def(char* name,char* line);
 int define_var(char* line);
 int second_data_sort();
+int link_data_list();
     
 
 /*----------GLOBAL VARIABLES------------*/
@@ -121,6 +122,9 @@ int first_read(FILE* input_file,char* file_name){
         error_exist+=(temp_num*-1); 
         rows++;
     }
+    
+    link_data_list();
+
     error_exist = second_data_sort();
 
     /* Connect data nodes to the end of command nodes */
@@ -185,13 +189,13 @@ int label_def(char* name,char* line){
     }
     /*----------Check if string definition------*/
     if(strcmp(first_word,".string")==0){
-        sscanf(line, "%*s %[^\n]", line); /*Remove the '.data' from the line*/
+        sscanf(line, "%*s %[^\n]", line); /*Remove the '.string' from the line*/
         error_exist += add_string_node(name,line);/*Add every word to datat lisr*/
         return 0;
     }
 
     sprintf(first_word,"%d",IC+100); /*Use the first_word variable, to send the curent code row*/
-    add_label(name,".data",first_word); /*Add code label to the list*/
+    add_label(name,"Label",first_word); /*Add code label to the list*/
     sscanf(line, "%s", name);
     sscanf(line, "%*s %[^\n]", line);
     temp_num=command_sort(name,line,IC+100,rows,file_name_glob);
@@ -211,8 +215,8 @@ int add_string_node(char* name,char* line){
     for(i = 3;i<strlen(line)-3;i++){
 
         if((line[i] >= 'a' && line[i] <= 'z') || (line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= '0' && line[i] <= '9')){ 
-            sprintf(temp,"0%d\t",DC);/*Add zero to the rows number*/
-            strcat(temp,char_to_binary(line[i]));
+            
+            sprintf(temp,"\t%s",char_to_binary(line[i]));
             add_binary_line(temp,'d',0);
             continue;
         }
@@ -221,8 +225,7 @@ int add_string_node(char* name,char* line){
             return -1;
         }
     }
-    sprintf(temp,"0%d\t",DC);/*Add zero to the rows number*/
-    strcat(temp,char_to_binary('\0'));
+    sprintf(temp,"\t%s",char_to_binary('\0'));
     add_binary_line(temp,'d',0);
     return 0;
 }
@@ -248,15 +251,13 @@ int add_data_node(char* name,char* line){
                     return 1;
                 }
                 if(is_number(word)){ /*If it's a number add him*/
-                    sprintf(temp,"0%d\t",DC);/*Add zero to the rows number*/
-                    strcat(temp,num_to_binary(atoi(word),14));/*Take the string 'word', cust him to int, and convert to binary, then add to temp*/
+                    sprintf(temp,"\t%s",num_to_binary(atoi(word),14));/*Take the string 'word', cust him to int, and convert to binary, then add to temp*/
                     add_binary_line(temp,'d',0); /* Save in data list with row number*/
                     strcpy(word,"");
                     continue;
                 }
                 if(in_data_list(word,0)!=NULL){ /*Check the labels list*/
-                    sprintf(temp,"0%d\t",DC);/*Add zero to the rows number*/
-                    strcat(temp,num_to_binary(atoi(in_data_list(word,1)->data),14));
+                    sprintf(temp,"\t%s",num_to_binary(atoi(in_data_list(word,1)->data),14));
                     add_binary_line(temp,'d',0);
                     strcpy(word,"");
                     continue;
@@ -272,13 +273,11 @@ int add_data_node(char* name,char* line){
                 strncat(word,&line[i],1);
         }
     if(is_number(word)){ /*If it's a number add him*/
-        sprintf(temp,"0%d\t",DC);/*Add zero to the rows number*/
-        strcat(temp,num_to_binary(atoi(word),14));
+        sprintf(temp,"\t%s",num_to_binary(atoi(word),14));
         add_binary_line(temp,'d',1);
     }
     if(in_data_list(word,0)!=NULL){ /*Check the labels list*/
-        sprintf(temp,"0%d\t",DC);/*Add zero to the rows number*/
-        strcat(temp,num_to_binary(atoi(in_data_list(word,0)->data),14));
+        sprintf(temp,"\t%s",num_to_binary(atoi(in_data_list(word,0)->data),14));
         add_binary_line(temp,'d',1);
     }
     return 0;
@@ -320,7 +319,6 @@ int second_data_sort(){
         if(strcmp(label_temp->type,".entry")==0){
             label_entry = in_data_list(label_temp->name,2);
             if(label_entry!=NULL){
-
                 add_label(label_temp->name,".entry_use",label_entry->data);
             }
         }
@@ -331,6 +329,25 @@ int second_data_sort(){
     return error_exist;
 }
 
+int link_data_list(){
+
+    label* temp = label_list_head;
+    binary* bin_temp = binary_data_head;
+    char* temp_str = (char*)calloc(MAX_LINE_SIZE, sizeof(char));
+    while(temp!=NULL){
+        if(strcmp(temp->type,".data")==0 || strcmp(temp->type,".string")==0)
+            sprintf(temp->data,"%d",(atoi(temp->data) + IC + 100));
+        temp= temp->next;
+    }
+
+    DC = 0;
+    while(bin_temp!=NULL){
+        sprintf(temp_str,"0%d%s",((DC++)+IC+100),bin_temp->data);
+        strcpy(bin_temp->data, temp_str);
+        bin_temp = bin_temp->next;
+    }
+    return 0;
+}
 
 int add_label(char* name,char* type,char* data){
 
