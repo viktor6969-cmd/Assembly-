@@ -20,6 +20,7 @@ int origin_rows;
 
 /*------------DECLARATIONS--------------*/
 int write_operand(int type,int IC, char* first);
+int command_line_check(char* line);
 int command_number(char* name);
 int opearnd_type(char* line);
 
@@ -33,81 +34,33 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
 
     *first_operand = '\0';
     *secnd_operand = '\0';
+    file_name_global = file_name;
     origin_rows = rows;
     
     /*-------Check if command exist in command list------------*/
     if((comm_num = command_number(name)) < 0){ /*Return error if not*/
         printf("%s: Error at row %d: Uncnown command: '%s'\n",file_name,rows,command_list[comm_num].name);
         return -1;
-    }
-    /*-----------There are no variables------------*/
-    if(strcmp(name,line)==0){
+    }                   
 
-        /*-----If the command is hlt or not, add to output binary list ------- */
-        if((strcmp(name,"hlt")==0)||(strcmp(name,"not")==0)){
+    /*-----Check number of operands in line ----------*/
+    switch(command_line_check(line)){
+
+        /*---------The only operand is a name of a command 'hlt' or 'not'------*/
+        case 0:
             sprintf(binary_line,"0%d\t0000%s000000",IC++,command_list[comm_num].binary_code);
             add_binary_line(binary_line,'h',1);
             return 1;
-        }
-        /*------If not, return an error---------*/
-        else{
-            printf("%s: Error at row %d: Uncnown command: \'%s\'\x1b[0m\n",file_name,rows,command_list[comm_num].name);
-            return -1;
-        }
-    }
 
-    /*-----Check how meny variables can we read from the line ----------*/
-    if(sscanf(line, "%[^,],%s", first_operand, secnd_operand)==2){
-        type1 = opearnd_type(first_operand);
-        type2 = opearnd_type(secnd_operand);
+        /*------------There only one operand--------------------*/
+        case 1:
 
-    /*----------Check the valid operands amount-----------*/
-        if(command_list[comm_num].operands!=2){
-            printf("%s: Error at row %d: %d operand expected for '%s'\n", file_name, rows,command_list[comm_num].operands, command_list[comm_num].name);
-            return -1;
-        }
-
-    /*--If both operands are registers put them in one line --*/
-        if(type1 == 3 && type2 ==3){
-            sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11","11");
-            add_binary_line(binary_line,'c',1);/*Add the first line, with both operand sotr numbers 11*/
-            sprintf(binary_line,"0%d\t000000%s%s00",IC++,string_to_binary(&first_operand[1],3),string_to_binary(&secnd_operand[1],3));
-            add_binary_line(binary_line,'r',1);/*Add the second line, with both registers numbers*/
-            return 2;
-        }
-        
-    /*----If only the first, add him , and then send the second one to 'write operand' function---*/
-        if(type1 == 3){
-            sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11",num_to_binary(type2,2));
-            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
-            sprintf(binary_line,"0%d\t000000%s00000",IC++,string_to_binary(&first_operand[1],3));
-            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
-            return 2+(write_operand(type2,IC,secnd_operand));/* Add the additional*/
-        }
-    /*----Do the same but with second operand instead---*/
-        if(type2 == 3){
-            sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type2,2),"11");
-            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
-            sprintf(binary_line,"0%d\t000000000%s00",IC++,string_to_binary(&first_operand[1],3));
-            add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
-            return 2+(write_operand(type1,IC,first_operand));/* Add the additional*/
-        }
-    
-    /*---If there no register sort, send both operands to 'write' function, and add sort numbers to the first command*/
-        sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2),num_to_binary(type2,2));
-        add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
-        temp = (write_operand(type1,IC,first_operand));
-        IC += temp;
-        return 1+ temp + (write_operand(type2,IC,secnd_operand)); 
-    }     
-
-    /*------------If there only one operand--------------------*/
-    else{
-
+        /*Comand validation check*/
         if(command_list[comm_num].operands!=1){
             printf("%s: Error at row %d: %d operands expected for '%s' command\n", file_name, rows,command_list[comm_num].operands, command_list[comm_num].name);
             return -1;
         }
+        sscanf(line, "%s", first_operand);
         type1 = opearnd_type(first_operand);
         if(type1 == 3){ /*Register sort*/
             sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2));
@@ -119,6 +72,59 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
         sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(opearnd_type(first_operand),2));
         add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
         return 1+ (write_operand(opearnd_type(first_operand),IC,first_operand));/* Add the additional lines*/
+    
+
+
+        /*----------------Two operands------------------------*/
+        case 2:
+            sscanf(line, "%[^,],%s", first_operand, secnd_operand);
+            type1 = opearnd_type(first_operand);
+            type2 = opearnd_type(secnd_operand);
+
+        /*----------Check the valid operands amount-----------*/
+            if(command_list[comm_num].operands!=2){
+                printf("%s: Error at row %d: %d operand expected for '%s'\n", file_name, rows,command_list[comm_num].operands, command_list[comm_num].name);
+                return -1;
+            }
+
+        /*--If both operands are registers put them in one line --*/
+            if(type1 == 3 && type2 ==3){
+                sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11","11");
+                add_binary_line(binary_line,'c',1);/*Add the first line, with both operand sotr numbers 11*/
+                sprintf(binary_line,"0%d\t000000%s%s00",IC++,string_to_binary(&first_operand[1],3),string_to_binary(&secnd_operand[1],3));
+                add_binary_line(binary_line,'r',1);/*Add the second line, with both registers numbers*/
+                return 2;
+            }
+        
+        /*----If only the first, add him , and then send the second one to 'write operand' function---*/
+            if(type1 == 3){
+                sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,"11",num_to_binary(type2,2));
+                add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
+                sprintf(binary_line,"0%d\t000000%s00000",IC++,string_to_binary(&first_operand[1],3));
+                add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+                return 2+(write_operand(type2,IC,secnd_operand));/* Add the additional*/
+            }
+        /*----Do the same but with second operand instead---*/
+            if(type2 == 3){
+                sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type2,2),"11");
+                add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
+                sprintf(binary_line,"0%d\t000000000%s00",IC++,string_to_binary(&first_operand[1],3));
+                add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
+                return 2+(write_operand(type1,IC,first_operand));/* Add the additional*/
+            }
+    
+        /*---If there no register sort, send both operands to 'write' function, and add sort numbers to the first command*/
+           
+            sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2),num_to_binary(type2,2));
+            add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
+            temp = (write_operand(type1,IC,first_operand));
+            IC += temp;
+            return 1+ temp + (write_operand(type2,IC,secnd_operand)); 
+             
+        /*If there more then 2 operands*/     
+        case 3:
+            printf("%s: Error at row %d:To many operands for \'%s\' command\n",file_name_global,origin_rows,command_list[comm_num].name);
+            return 1;
     }
     
     return 0;
@@ -254,6 +260,17 @@ int command_number(char* name){
             return i;
     }
     return -1;
+}
+
+int command_line_check(char* line){
+
+    char first_op[MAX_LINE_SIZE];
+    char secnd_op[MAX_LINE_SIZE];
+
+    if(strcmp(line,"hlt")==0 || strcmp(line,"rts")==0)
+        return 0;
+
+    return sscanf(line, "%[^,],%s,%[^,]", first_op, secnd_op, line);
 }
 
 char* command_code(char* name){

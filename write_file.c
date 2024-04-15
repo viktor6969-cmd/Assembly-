@@ -10,8 +10,8 @@ char* weird_code(char* base4);
 /*-------------FUNCTIONS----------------*/
 int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
 
-    char* string_temp = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
-    char* line = malloc(4*sizeof(char));
+    char* string_temp =(char*)calloc(MAX_LABEL_NAME_SIZE, sizeof(char));
+    char* line = (char*)calloc(4, sizeof(char));
     binary* binary_temp = binary_list;
     label* label_temp = label_list;
     FILE* binary_output = NULL;

@@ -95,8 +95,17 @@ int first_read(FILE* input_file,char* file_name){
         }
         
         /*---------------------Check if comand ---------------------*/
-        sscanf(line, "%*s %[^\n]", line);
+        
+        /*Check if there more than 1 word in line, and if not, is this word 'rts' or 'hlt'?*/
+        if(sscanf(line, "%s %[^\n]",first_word,line)==1 && (strcmp(first_word,"hlt")!=0 || strcmp(first_word,"rts")!=0)){   
+
+            printf("%s: Error at row %d:Missing opernds in line \'%s\'\n",file_name_glob,rows++,line);
+            rows++;
+            continue;
+        }
+        
         temp_num=command_sort(first_word,line,IC,rows,file_name);
+
         if(temp_num > 0){
             IC+=temp_num;
             rows++;
@@ -106,11 +115,12 @@ int first_read(FILE* input_file,char* file_name){
         error_exist+=(temp_num*-1); 
         rows++;
     }
-    
     error_exist = second_data_sort();
 
-    temp = label_list_head;
-    /*while(temp!=NULL){
+    /*temp = label_list_head;
+
+    printf("\n\n");
+    while(temp!=NULL){
         printf("%s\t%s\t%s\n",temp->name,temp->type,temp->data);
         temp = temp->next;
     }

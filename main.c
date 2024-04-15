@@ -9,7 +9,7 @@ int main(int argc, char *argv[]){
     FILE* file;
     char file_name[MAX_LINE_SIZE];
 
-    printf("\x1b[31m");
+    /*printf("\x1b[31m");*/
     /*-------Arguments check----------*/
     if(argc < 2){
         print_error("Arguments missing! \nusage : ./assembly \"file1\" \"file2\" ...");
