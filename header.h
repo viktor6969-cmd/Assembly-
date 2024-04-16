@@ -32,6 +32,7 @@ char* char_to_binary(char ch);
 
 /*--------Validation_check functions--------*/
 int defenition_name_valid_check(char* first_word, label* list);
+int valid_data(char* word,char* file_name,int rows);
 void print_error(char* error_string);
 int is_number(char *str);
 int is_register(char* name);

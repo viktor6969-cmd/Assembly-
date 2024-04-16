@@ -76,9 +76,9 @@ int first_read(FILE* input_file,char* file_name){
             /*----If not print an error and go to next line----*/
             else{
                 if(command_number(first_word)==-1)
-                    printf("%s:%s:In line %d Missing arguments for:\'%s\'\n",file_name_glob,red_error,rows,first_word);
+                    printf("%s:%s:line %d Missing arguments for:\'%s\'\n",file_name_glob,red_error,rows,first_word);
                 else
-                    printf("%s:%s at row %d:Invalid line \'%s\'\n",file_name_glob,red_error,rows++,line);   
+                    printf("%s:%s:line %d:Invalid line \'%s\'\n",file_name_glob,red_error,rows++,line);   
                 
                 error_exist++;
             }        
@@ -104,7 +104,7 @@ int first_read(FILE* input_file,char* file_name){
                     add_label(second_word,".extern","");
                 
                 else{
-                    printf("%s:%s at row %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,second_word);
+                    printf("%s:%s:line %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,second_word);
                     error_exist++;
                 }
                 continue;
@@ -118,8 +118,7 @@ int first_read(FILE* input_file,char* file_name){
                     add_label(second_word,".entry","");
             
                 else{
-                    printf("Label:%s, type:%s\n",second_word,temp->type);
-                    printf("%s:%s at row %d:Double defenition for:%s\n",file_name_glob,red_error,rows,second_word);
+                    printf("%s:%s:line %d:Double defenition for:%s\n",file_name_glob,red_error,rows,second_word);
                     error_exist++;
                 }
                 continue;
@@ -155,7 +154,7 @@ int first_read(FILE* input_file,char* file_name){
 
                 if(first_word[strlen(first_word)-1]==':'){
                     /*Write a warning*/
-                    printf("%s:%s at row %d, incorrect definition of '%s'. A label cannot be defined as an '.extern' line\n",file_name,warning,rows,third_word);
+                    printf("%s:%s:line %d, incorrect definition of '%s'. A label cannot be defined as an '.extern' line\n",file_name,warning,rows,third_word);
                     /*Add him anyway, becouse we are nice */
                     temp = in_data_list(third_word,0); 
 
@@ -163,12 +162,12 @@ int first_read(FILE* input_file,char* file_name){
                         add_label(third_word,".extern","");
                     
                     else{
-                        printf("%s:%s at row %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,third_word);
+                        printf("%s:%s:line %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,third_word);
                         error_exist++;
                     }
                 }
                 else
-                    printf("%s:%s at row %d:Invalid line:%s\n",file_name,red_error,rows,line);
+                    printf("%s:%s:line %d:Invalid line:%s\n",file_name,red_error,rows,line);
                 
                 continue;
             }
@@ -177,7 +176,7 @@ int first_read(FILE* input_file,char* file_name){
 
                if(first_word[strlen(first_word)-1]==':'){
                     /*Write a warning*/
-                    printf("%s:%s at row %d, incorrect definition of '%s'. A label cannot be defined as an '.entery' line\n",file_name,warning,rows,third_word);
+                    printf("%s:%s:line %d, incorrect definition of '%s'. A label cannot be defined as an '.entery' line\n",file_name,warning,rows,third_word);
                     /*Add him anyway, becouse we are nice */
                     temp = in_data_list(third_word,0); 
 
@@ -185,12 +184,12 @@ int first_read(FILE* input_file,char* file_name){
                         add_label(third_word,".entry","");
                     }
                     else{
-                        printf("%s:%s at row %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,third_word);
+                        printf("%s:%s:line %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,third_word);
                         error_exist++;
                     }
                 }
                 else
-                    printf("%s:%s at row %d:Invalid line:%s\n",file_name,red_error,rows,line);
+                    printf("%s:%s:line %d:Invalid line:%s\n",file_name,red_error,rows,line);
                 
                 continue;
             }        
@@ -203,7 +202,7 @@ int first_read(FILE* input_file,char* file_name){
             sscanf(line, "%*s %[^\n]", line);/*Remove the command name from the command line*/
             
             if(sscanf(line,"%*s %*s %s",third_word) == 1){/*If tehre more then 2 arguments, print error and move on*/
-                 printf("%s:%s at row %d:Too many variabels\n",file_name_glob,red_error,rows);
+                 printf("%s:%s:line %d:Unexpexted operand:'%s'\n",file_name_glob,red_error,rows,third_word);
                  error_exist ++;
             }
             temp_num=command_sort(first_word,line,IC+100,rows,file_name);
@@ -266,7 +265,7 @@ int define_var(char* line){
     /*-----------Validation check--------------*/
     label_validation_check(first_word);
     if(!is_number(second_word)){
-        printf("%s:%s at row %d:The value '%s' must be an integer number \n",file_name_glob,red_error,rows++,second_word);
+        printf("%s:%s:line %d:The value '%s' must be an integer number \n",file_name_glob,red_error,rows++,second_word);
         error_exist++;
     }
     /*-------Add variable to labels list---------*/
@@ -308,7 +307,7 @@ int label_def(char* name,char* line){
 }
 
 int add_string_node(char* name,char* line){
-    /* ADD VALIDATION CHECK*/
+
     int i;
     char temp[MAX_BINARY_LINE_SIZE];
     sprintf(temp, "%d", DC);
@@ -322,8 +321,8 @@ int add_string_node(char* name,char* line){
             continue;
         }
         else{
-            printf("%s: Error at row %d:Invalid char '%c' \n",file_name_glob,rows,line[i]);
-            return -1;
+            printf("%s:%s:line %d:Invalid char in string input'%c' \n",file_name_glob,red_error,rows,line[i]);
+            error_exist ++;
         }
     }
     sprintf(temp,"\t%s",char_to_binary('\0'));
@@ -334,7 +333,7 @@ int add_string_node(char* name,char* line){
 int add_data_node(char* name,char* line){
     int i;
     char word[MAX_LINE_SIZE-6]; /* The -6 is becouse we skipping the '.data'*/
-    char temp[MAX_BINARY_LINE_SIZE];
+   
     sprintf(word, "%d", DC);
     add_label(name,".data",word);
     strcpy(word,"");
@@ -344,43 +343,23 @@ int add_data_node(char* name,char* line){
 
             if((line[i])==','){
                 if((i+1) == strlen(line)){
-                    printf("%s: Error at row %d: line: %s \nMissing argument after \',\' in data declaration\n",file_name_glob,rows,line);
+                    printf("%s:%s:line %d:Missing argument after \',\' char in data declaration\n",file_name_glob,red_error,rows);
                     return 1;
                 }
                 if((line[i+1]==',')){
-                    printf("%s: Error at row %d: line: %s \nDubble \',\' char in data declaration\n",file_name_glob,rows,line);
+                    printf("%s:%s:line %d: %s\nDubble \',\' char in data declaration\n",file_name_glob,red_error,rows,line);
                     return 1;
                 }
-                if(is_number(word)){ /*If it's a number add him*/
-                    sprintf(temp,"\t%s",num_to_binary(atoi(word),14));/*Take the string 'word', cust him to int, and convert to binary, then add to temp*/
-                    add_binary_line(temp,'d',0); /* Save in data list with row number*/
-                    strcpy(word,"");
-                    continue;
-                }
-                if(in_data_list(word,0)!=NULL){ /*Check the labels list*/
-                    sprintf(temp,"\t%s",num_to_binary(atoi(in_data_list(word,1)->data),14));
-                    add_binary_line(temp,'d',0);
-                    strcpy(word,"");
-                    continue;
-                }
-                else{
-                    printf("%s: Error at row %d: '%s' \nInvalid input\n",file_name_glob, rows,word);
-                    return 1;
-                }
-                    
+                error_exist+=valid_data(word,file_name_glob,rows); 
                 strcpy(word,"");
             }
             else
                 strncat(word,&line[i],1);
         }
-    if(is_number(word)){ /*If it's a number add him*/
-        sprintf(temp,"\t%s",num_to_binary(atoi(word),14));
-        add_binary_line(temp,'d',1);
-    }
-    if(in_data_list(word,0)!=NULL){ /*Check the labels list*/
-        sprintf(temp,"\t%s",num_to_binary(atoi(in_data_list(word,0)->data),14));
-        add_binary_line(temp,'d',1);
-    }
+
+    /*Scan the last variable*/    
+   
+    error_exist+=valid_data(word,file_name_glob,rows);
     return 0;
 }
 
@@ -600,22 +579,22 @@ int label_validation_check(char* name){
     switch(defenition_name_valid_check(name,label_list_head)){
 
         case 1:
-            printf("%s:%s at row %d: Multiple definitions of label '%s'\n",file_name_glob,red_error,rows++,name);
+            printf("%s:%s:line %d: Multiple definitions of label '%s'\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
 
         case 2:
-            printf("%s:%s at row %d: The label '%s' can't have a name of assembly command\n",file_name_glob,red_error,rows++,name);
+            printf("%s:%s:line %d: The label '%s' can't have a name of assembly command\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
 
         case 3:
-            printf("%s:%s at row %d: The label '%s' can't be a register name\n",file_name_glob,red_error,rows++,name);
+            printf("%s:%s:line%d: The label '%s' can't be a register name\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
 
         case 4:
-            printf("%s:%s at row %d: The label '%s' can't be a number\n",file_name_glob,red_error,rows++,name);
+            printf("%s:%s:line %d: The label '%s' can't be a number\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
         

@@ -41,7 +41,7 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
     
     /*-------Check if command exist in command list------------*/
     if((comm_num = command_number(name)) < 0){ /*Return error if not*/
-        printf("%s:%s at row %d: Uncnown command: '%s'\n",file_name,red_error_str,rows,command_list[comm_num].name);
+        printf("%s:%s:line %d: Uncnown command: '%s'\n",file_name,red_error_str,rows,name);
         return -1;
     }                   
 
@@ -67,7 +67,7 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
         type1 = opearnd_type(first_operand);
         
         if(operands_use_valid(comm_num,type1,-1)){
-                printf("%s: Error at row %d: invalid operads type for '%s' command\n",file_name,rows,command_list[comm_num].name);
+                printf("%s:%s:line %d: invalid operads type for '%s' command\n",file_name,red_error_str,rows,command_list[comm_num].name);
                 return -1;
             }
 
@@ -92,13 +92,13 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
             type2 = opearnd_type(secnd_operand);
 
             if(operands_use_valid(comm_num,type1,type2)){
-                printf("%s: Error at row %d: invalid operads type for '%s' command\n",file_name,rows,command_list[comm_num].name);
+                printf("%s:%s:line %d: invalid operads type for '%s' command\n",file_name,red_error_str,rows,command_list[comm_num].name);
                 return -1;
             }
 
         /*----------Check the valid operands amount-----------*/
             if(command_list[comm_num].operands!=2){
-                printf("%s: Error at row %d: %d operand expected for '%s'\n", file_name, rows,command_list[comm_num].operands, command_list[comm_num].name);
+                printf("%s:%s:line %d: %d operand expected for '%s'\n", file_name,red_error_str, rows,command_list[comm_num].operands, command_list[comm_num].name);
                 return -1;
             }
 
@@ -143,7 +143,7 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
              
         /*If there more then 2 operands*/     
         case 3:
-            printf("%s: Error at row %d:To many operands for \'%s\' command\n",file_name_global,origin_rows,command_list[comm_num].name);
+            printf("%s:%s:line %d:To many operands for \'%s\' command\n",file_name_global,red_error_str,origin_rows,command_list[comm_num].name);
             return 1;
     }
     
@@ -157,23 +157,29 @@ int write_operand(int type,int IC,char* first){
     is_found = 0;
     switch(type){
 
-        case 0:/*Immidiate sort*/
-        if((temp=in_data_list(&first[1],1))!=NULL){  
-            if(strcmp(temp->type,"mdefine")==0){
-               
-                sprintf(binary_line,"0%d\t%s00",IC,string_to_binary(temp->data,12));
-                add_binary_line(binary_line,'D',1);
-                return 1;
-            }
-            printf("%s: Error at row %d:Can not use: \'%s\' as variable for \'%s\'\n",file_name_global,origin_rows,&first[1],command_list[comm_num].name);
-            return -1;
-        }
-        
+        /*Immidiate sort*/
+        case 0:
+        /*If nuber add as binary line*/
         if((strlen(first)>=1) && is_number(&first[1])){
             sprintf(binary_line,"0%d\t%s00",IC++,string_to_binary(&first[1],12));
             add_binary_line(binary_line,'n',1);
             return 1;
         }
+        /*Check if defined variable*/
+        if((temp=in_data_list(&first[1],1))!=NULL){
+            if((strcmp(temp->type,"mdefine")==0)){  
+                sprintf(binary_line,"0%d\t%s00",IC,string_to_binary(temp->data,12));
+                add_binary_line(binary_line,'D',1);
+                return 1;
+            }
+            else{
+                printf("%s:%s:line %d: Invalid usge of '%s' with the command '%s'\n",file_name_global,red_error_str,origin_rows,&first[1],command_list[comm_num].name);
+                return -1;
+            }
+        }
+        
+        /*If undefined, print error and return -1*/
+        printf("%s:%s:line %d:\'%s\' must be defined before use\n",file_name_global,red_error_str,origin_rows,&first[1]);
         return -1;
         
         /*-----------Direct sort---------------*/
@@ -220,12 +226,12 @@ int write_operand(int type,int IC,char* first){
         }
 
         if(is_register(temp_second)){
-            printf("%s:%s at row %d:\'%s\' register used as index in \'%s\'\n",file_name_global,red_error_str,origin_rows,temp_second,temp_first);
+            printf("%s:%s:line %d:\'%s\' register used as index in \'%s\'\n",file_name_global,red_error_str,origin_rows,temp_second,temp_first);
             return -1;
         }
 
         if(command_number(temp_second)>0){
-            printf("%s:%s at row %d:\'%s\' command used as variable for \'%s\'\n",file_name_global,red_error_str,origin_rows,temp_second,temp_first);
+            printf("%s:%s:line %d:\'%s\' command used as variable for \'%s\'\n",file_name_global,red_error_str,origin_rows,temp_second,temp_first);
             return -1;
         }
         /*-------Is label--------*/
