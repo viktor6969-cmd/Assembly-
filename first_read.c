@@ -20,6 +20,8 @@ binary* binary_data_curent = NULL;
 binary* binary_data_head = NULL;
 label* label_list_curent = NULL;
 label* label_list_head = NULL;
+const char* warning = "\033[0;35m WARNING\033[0m";
+const char* red_error = "\x1b[31mERROR\033[0m";
 char* file_name_glob;
 int error_exist;
 int temp_num;
@@ -33,6 +35,7 @@ int first_read(FILE* input_file,char* file_name){
     label* temp;
     char line[MAX_LINE_SIZE];
     char first_word[MAX_LINE_SIZE];
+    char second_word[MAX_LINE_SIZE];
     file_name_glob = file_name;
     error_exist = 0;
     rows = 1;
@@ -45,8 +48,8 @@ int first_read(FILE* input_file,char* file_name){
             rows++;
             continue; 
         }
-        sscanf(line, "%s", first_word);/*Read the first word*/ 
-        /*printf("Command:'%s' IC:%d, DC:%d\n",line,IC,DC);*/
+        sscanf(line, "%s %s",first_word,second_word);/*Read the first word*/ 
+        /*printf("Command:'%s' IC:%d,  DC:%d\n",line,IC,DC);*/
         /*------------Skip all the comment lines--------------------*/
         if(line[0] == ';'){
             rows++;
@@ -64,14 +67,27 @@ int first_read(FILE* input_file,char* file_name){
         temp = in_data_list(first_word,0); 
 
         /*------------Extern definition--------------------*/
-        if(strcmp(first_word,".extern")==0){
-            sscanf(line, "%*s %s", first_word);
+        if(strcmp(first_word,".extern")==0 || strcmp(second_word,".extern")==0){
+
+            if(strcmp(second_word,".extern")==0){
+                if(first_word[strlen(first_word)-1]==':'){
+                    printf("%s:%s at row %d, incorrect definition of '%s'. A label cannot be defined as an '.extern' line\n",file_name_glob,warning,rows,first_word);
+                    
+                    if(sscanf(line,"%*s %*s %s",first_word)!=1) /*Read the Label name, skipping the first label and the .extern word*/
+                        printf("%s:%s at row %d:Invalid line, missing arguments:%s\n",file_name,red_error,rows,line);
+                }
+                else
+                    printf("%s:%s at row %d:Invalid line:%s\n",file_name,red_error,rows,line);
+            }
+
+            else 
+                sscanf(line, "%*s %s", first_word);
             
             if(temp==NULL || (strcmp(temp->type,".extern")==0)){
                 add_label(first_word,".extern","");
             }
             else{
-                printf("%s: Error at row %d:Double defenition for:%s\n",file_name_glob,rows,first_word);
+                printf("%s:%s at row %d:Double defenition for:%s\n",file_name_glob,red_error,rows,first_word);
                 error_exist=1;
             }
             rows++;
