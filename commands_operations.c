@@ -11,6 +11,7 @@ typedef struct commands{
 }commands;
 
 /*----------GLOBAL VARIABLES------------*/
+char* red_error_str = "\x1b[31m ERROR\033[0m";
 commands command_list[COMMAND_LIST_SIZE];
 char binary_line[MAX_BINARY_LINE_SIZE];
 char* file_name_global;
@@ -40,7 +41,7 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
     
     /*-------Check if command exist in command list------------*/
     if((comm_num = command_number(name)) < 0){ /*Return error if not*/
-        printf("%s: Error at row %d: Uncnown command: '%s'\n",file_name,rows,command_list[comm_num].name);
+        printf("%s:%s at row %d: Uncnown command: '%s'\n",file_name,red_error_str,rows,command_list[comm_num].name);
         return -1;
     }                   
 
@@ -58,7 +59,7 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
 
         /*Comand validation check*/
         if(command_list[comm_num].operands!=1){
-            printf("%s: Error at row %d: operands expected for '%s' command\n", file_name, rows, command_list[comm_num].name);
+            printf("%s:%s at row %d: operands expected for '%s' command\n", file_name,red_error_str, rows, command_list[comm_num].name);
             return -1;
         }
         
@@ -79,7 +80,8 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
         }
         sprintf(binary_line,"0%d\t0000%s00%s00",IC++,command_list[comm_num].binary_code,num_to_binary(opearnd_type(first_operand),2));
         add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
-        return 1+ (write_operand(opearnd_type(first_operand),IC,first_operand));/* Add the additional lines*/
+        temp = write_operand(opearnd_type(first_operand),IC,first_operand);/* Add the additional lines*/
+        return temp + ((temp>0)?1:0);
     
 
 
@@ -115,7 +117,8 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
                 add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
                 sprintf(binary_line,"0%d\t000000%s00000",IC++,string_to_binary(&first_operand[1],3));
                 add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
-                return 2+(write_operand(type2,IC,secnd_operand));/* Add the additional*/
+                temp = write_operand(type2,IC,secnd_operand);
+                return (temp>0)?(temp+2):(-1);/* Add the additional*/
             }
         /*----Do the same but with second operand instead---*/
             if(type2 == 3){
@@ -123,16 +126,20 @@ int command_sort(char* name,char* line,int IC,int rows,char* file_name){
                 add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/
                 sprintf(binary_line,"0%d\t000000000%s00",IC++,string_to_binary(&first_operand[1],3));
                 add_binary_line(binary_line,'r',1);/*Add the first line, with the sort number*/
-                return 2+(write_operand(type1,IC,first_operand));/* Add the additional*/
+                temp = write_operand(type1,IC,first_operand);
+                return (temp>0)?(temp+2):(-1);/* Add the additional*/
             }
     
         /*---If there no register sort, send both operands to 'write' function, and add sort numbers to the first command*/
-           
+            
             sprintf(binary_line,"0%d\t0000%s%s%s00",IC++,command_list[comm_num].binary_code,num_to_binary(type1,2),num_to_binary(type2,2));
             add_binary_line(binary_line,'c',1);/*Add the first line, with the sort number*/ 
             temp = (write_operand(type1,IC,first_operand));
+            if(temp<0)
+                return -1;
             IC += temp;
-            return 1+ temp + (write_operand(type2,IC,secnd_operand)); 
+            type1 = write_operand(type2,IC,secnd_operand); /*Use type1 as second temp variable*/
+            return (type1>0)?(1+ temp + type1):(-1); 
              
         /*If there more then 2 operands*/     
         case 3:
@@ -159,7 +166,7 @@ int write_operand(int type,int IC,char* first){
                 return 1;
             }
             printf("%s: Error at row %d:Can not use: \'%s\' as variable for \'%s\'\n",file_name_global,origin_rows,&first[1],command_list[comm_num].name);
-            return 1;
+            return -1;
         }
         
         if((strlen(first)>=1) && is_number(&first[1])){
@@ -202,21 +209,36 @@ int write_operand(int type,int IC,char* first){
             is_found = 0;
         sprintf(binary_line,"0%d\t%s",IC++,temp_first);
         add_binary_line(binary_line,'u',is_found);/*Add the first line, with the sort number*/
+        
+
+        /*----Index check---------*/
+
+        if(is_number(temp_second)){
+            sprintf(binary_line,"0%d\t%s00",IC++,string_to_binary(temp_second,12));
+            add_binary_line(binary_line,'i',1);
+            return 2;
+        }
+
+        if(is_register(temp_second)){
+            printf("%s:%s at row %d:\'%s\' register used as index in \'%s\'\n",file_name_global,red_error_str,origin_rows,temp_second,temp_first);
+            return -1;
+        }
+
+        if(command_number(temp_second)>0){
+            printf("%s:%s at row %d:\'%s\' command used as variable for \'%s\'\n",file_name_global,red_error_str,origin_rows,temp_second,temp_first);
+            return -1;
+        }
+        /*-------Is label--------*/
         temp=in_data_list(temp_second,0);
 
-        /*If the index name exist in data list*/
-        if(temp!=NULL){
-            sprintf(temp_second,string_to_binary(temp->data,12));
-            is_found = 1;
+        if(temp!=NULL){ /*af found, write the line*/
+            sprintf(binary_line,"0%d\t%s00",IC++,string_to_binary(temp->data,12));
+            add_binary_line(binary_line,'i',1);
+            return 2;
         }
-        else if(is_number(temp_second)){
-                sprintf(temp_second,string_to_binary(temp_second,12));
-                is_found = 1;
-                }
-            else
-                is_found = 0;
-        sprintf(binary_line,"0%d\t%s00",IC++,temp_second);
-        add_binary_line(binary_line,'i',is_found);/*Add the first line, with the sort number*/
+        /*If not foubd, write the name, and set the flag to 0*/
+        sprintf(binary_line,"0%d\t%s",IC++,temp_second);
+        add_binary_line(binary_line,'i',0);/*Add the first line, with the sort number*/
         return 2;
         
         /*If the label is undefined, put his name in the line*/

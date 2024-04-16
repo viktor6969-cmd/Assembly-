@@ -8,8 +8,7 @@ int main(int argc, char *argv[]){
     int errors;
     FILE* file;
     char file_name[MAX_LINE_SIZE];
-
-    /*printf("\x1b[31m");*/
+    
     /*-------Arguments check----------*/
     if(argc < 2){
         print_error("Arguments missing! \nusage : ./assembly \"file1\" \"file2\" ...");
@@ -44,10 +43,9 @@ int main(int argc, char *argv[]){
         /*------------REad the file---------------*/
         errors += first_read(file,argv[i]);
         if(errors > 0)
-            printf("\n\nThere are %d errors in the source file '%s'. Output files were not created.",errors,file_name);
+            printf("\x1b[31m\n \nFATAL:\x1b[0m %d errors found in the source file '%s'. Output files were not created.",errors,file_name);
         fclose(file);
     }
-    printf("\x1b[0m\n");
     free_command_list();
     return 0;
 }

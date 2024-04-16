@@ -45,7 +45,7 @@ int operands_valid(char* line,int op_num){
 }
 
 int is_register(char* name){
-   return((name[0]=='r')&&(name[1] >= '0' && name[1] <= '8'));
+   return((name[0]=='r')&&(name[1] >= '0' && name[1] <= '8')&&(strlen(name)==2));
 }
 
 int is_number(char *str) {

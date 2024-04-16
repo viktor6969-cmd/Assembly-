@@ -20,8 +20,8 @@ binary* binary_data_curent = NULL;
 binary* binary_data_head = NULL;
 label* label_list_curent = NULL;
 label* label_list_head = NULL;
-const char* warning = "\033[0;35m WARNING\033[0m";
-const char* red_error = "\x1b[31mERROR\033[0m";
+char* warning = "\033[0;35m WARNING\033[0m";
+char* red_error = "\x1b[31m ERROR\033[0m";
 char* file_name_glob;
 int error_exist;
 int temp_num;
@@ -36,107 +36,191 @@ int first_read(FILE* input_file,char* file_name){
     char line[MAX_LINE_SIZE];
     char first_word[MAX_LINE_SIZE];
     char second_word[MAX_LINE_SIZE];
+    char third_word[MAX_LINE_SIZE];
     file_name_glob = file_name;
     error_exist = 0;
-    rows = 1;
+    rows = 0;
     IC = 0;
     DC = 0;
 
 
     while (fgets(line, sizeof(line), input_file)){ /*Go thrue the file, line by line*/
-        if (strcmp(line, "\n") == 0) {
-            rows++;
-            continue; 
-        }
-        sscanf(line, "%s %s",first_word,second_word);/*Read the first word*/ 
-        /*printf("Command:'%s' IC:%d,  DC:%d\n",line,IC,DC);*/
-        /*------------Skip all the comment lines--------------------*/
-        if(line[0] == ';'){
-            rows++;
-            continue;
-        }
-        /*Check the first word for:*/
-
-        /*-----------Variable definition-------------------*/
-        if(strcmp(first_word,".define")==0){
-            define_var(line);
-            rows++;
-            continue;
-        }
         
-        temp = in_data_list(first_word,0); 
+        rows ++;
+        /*printf("Command:'%s' rows:%d\n",line,rows);*/
+        /*------------Skip all the comment amd empty lines--------------------*/
+        if(line[0] == ';' || strcmp(line, "\n") == 0)
+            continue;
+        
+       
+        /*----------------Sort commands by word number--------------------------------*/
+        switch(sscanf(line, "%s %s %s",first_word,second_word,third_word)){/*Read the first word*/ 
+        
+        /*----------------------------Empty row---------------------------------------*/
+        case 0:
+            continue;
 
-        /*------------Extern definition--------------------*/
-        if(strcmp(first_word,".extern")==0 || strcmp(second_word,".extern")==0){
 
+        /*-------------------------One word in row------------------------------------*/
+        case 1:
+            /*-----If it 'hlt' or 'rts' write the command------*/
+            if(strcmp(first_word,"hlt") == 0 || strcmp(first_word,"rts")){
+
+                temp_num=command_sort(first_word,line,IC+100,rows,file_name);
+                if(temp_num > 0)
+                    IC+=temp_num; 
+                else
+                    error_exist+=(temp_num*-1);
+            }
+            
+            /*----If not print an error and go to next line----*/
+            else{
+                if(command_number(first_word)==-1)
+                    printf("%s:%s:In line %d Missing arguments for:\'%s\'\n",file_name_glob,red_error,rows,first_word);
+                else
+                    printf("%s:%s at row %d:Invalid line \'%s\'\n",file_name_glob,red_error,rows++,line);   
+                
+                error_exist++;
+            }        
+            continue;
+
+
+        /*----------------------------Two words---------------------------------------*/
+        case 2:    
+       
+            /*-----------Variable definition-------------------*/
+            if(strcmp(first_word,".define")==0){
+                define_var(line);
+                continue;
+            }
+
+            /*------------Extern definition--------------------*/
+
+            if(strcmp(first_word,".extern")==0){
+                
+                temp = in_data_list(second_word,0); 
+
+                if(temp==NULL /*|| (strcmp(temp->type,".extern")==0)*/)
+                    add_label(second_word,".extern","");
+                
+                else{
+                    printf("%s:%s at row %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,second_word);
+                    error_exist++;
+                }
+                continue;
+            }
+        
+            /*-------------Entry defenition--------------------*/
+            if(strcmp(first_word,".entry")==0){
+               temp = in_data_list(second_word,3); 
+                
+                if(temp==NULL)
+                    add_label(second_word,".entry","");
+            
+                else{
+                    printf("Label:%s, type:%s\n",second_word,temp->type);
+                    printf("%s:%s at row %d:Double defenition for:%s\n",file_name_glob,red_error,rows,second_word);
+                    error_exist++;
+                }
+                continue;
+            }
+            
+            /*--------------Label defenition-------------------*/
+            if((first_word[strlen(first_word)-1]) == ':'){
+                label_def(first_word,second_word);
+                continue;
+            }
+
+            /*------------------Command------------------------*/
+            temp_num=command_sort(first_word,second_word,IC+100,rows,file_name);
+
+            /*------Check for errors and go to next line-------*/
+            if(temp_num > 0)
+                IC+=temp_num; 
+            else   
+                error_exist+=(temp_num*-1);/*If there any error (witch represented with negative values) add it to error counter by making them positive*/ 
+            continue;
+        
+
+        /*-----------------------Thre and more words-----------------------------------*/
+        case 3:
+
+            /*-----------Variable definition-------------------*/
+            if(strcmp(first_word,".define")==0){
+                define_var(line);
+                continue;
+            }
+            /*-------------Extern definition-------------------*/
             if(strcmp(second_word,".extern")==0){
+
                 if(first_word[strlen(first_word)-1]==':'){
-                    printf("%s:%s at row %d, incorrect definition of '%s'. A label cannot be defined as an '.extern' line\n",file_name_glob,warning,rows,first_word);
+                    /*Write a warning*/
+                    printf("%s:%s at row %d, incorrect definition of '%s'. A label cannot be defined as an '.extern' line\n",file_name,warning,rows,third_word);
+                    /*Add him anyway, becouse we are nice */
+                    temp = in_data_list(third_word,0); 
+
+                    if(temp==NULL)
+                        add_label(third_word,".extern","");
                     
-                    if(sscanf(line,"%*s %*s %s",first_word)!=1) /*Read the Label name, skipping the first label and the .extern word*/
-                        printf("%s:%s at row %d:Invalid line, missing arguments:%s\n",file_name,red_error,rows,line);
+                    else{
+                        printf("%s:%s at row %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,third_word);
+                        error_exist++;
+                    }
                 }
                 else
                     printf("%s:%s at row %d:Invalid line:%s\n",file_name,red_error,rows,line);
+                
+                continue;
             }
+            /*-------------Entry defenition--------------------*/
+            if(strcmp(second_word,".entry")==0){
 
+               if(first_word[strlen(first_word)-1]==':'){
+                    /*Write a warning*/
+                    printf("%s:%s at row %d, incorrect definition of '%s'. A label cannot be defined as an '.entery' line\n",file_name,warning,rows,third_word);
+                    /*Add him anyway, becouse we are nice */
+                    temp = in_data_list(third_word,0); 
+
+                    if(temp==NULL){
+                        add_label(third_word,".entry","");
+                    }
+                    else{
+                        printf("%s:%s at row %d:Multiply defenition for:%s\n",file_name_glob,red_error,rows,third_word);
+                        error_exist++;
+                    }
+                }
+                else
+                    printf("%s:%s at row %d:Invalid line:%s\n",file_name,red_error,rows,line);
+                
+                continue;
+            }        
+            /*--------------Label defenition-------------------*/
+            if((first_word[strlen(first_word)-1]) == ':'){
+                label_def(first_word,line);
+                continue;
+            }
+            /*------------------Command------------------------*/
+            sscanf(line, "%*s %[^\n]", line);/*Remove the command name from the command line*/
+            
+            if(sscanf(line,"%*s %*s %s",third_word) == 1){/*If tehre more then 2 arguments, print error and move on*/
+                 printf("%s:%s at row %d:Too many variabels\n",file_name_glob,red_error,rows);
+                 error_exist ++;
+            }
+            temp_num=command_sort(first_word,line,IC+100,rows,file_name);
+
+            /*------Check for errors and go to next line-------*/
+            if(temp_num > 0)
+                IC+=temp_num; 
             else 
-                sscanf(line, "%*s %s", first_word);
-            
-            if(temp==NULL || (strcmp(temp->type,".extern")==0)){
-                add_label(first_word,".extern","");
-            }
-            else{
-                printf("%s:%s at row %d:Double defenition for:%s\n",file_name_glob,red_error,rows,first_word);
-                error_exist=1;
-            }
-            rows++;
+                error_exist+=(temp_num*-1);/*If there any error (witch represented with negative values) add it to error counter by making them positive*/ 
             continue;
-        }
-        
-        /*-------------Entry defenition--------------------*/
-        if(strcmp(first_word,".entry")==0){
-            sscanf(line, "%*s %s", first_word);
-            if(temp==NULL || (strcmp(temp->type,".entry")==0)){
-                add_label(first_word,".entry","");
-            }
-            else{
-                printf("%s: Error at row %d:Double defenition for:%s\n",file_name_glob,rows,first_word);
-                error_exist++;
-            }
-            rows++;
-            continue;
-        }
-        
-        /*---------------Label defenition-----------------------*/
-        if((first_word[strlen(first_word)-1]) == ':'){
-            
-            label_def(first_word,line);
-            rows++;
-            continue;
-        }
-        
-        /*---------------------Check if comand ---------------------*/
-        
-        /*Check if there more than 1 word in line, and if not, is this word 'rts' or 'hlt'?*/
-        if(sscanf(line, "%s %[^\n]",first_word,line)==1 && (strcmp(first_word,"hlt")!=0 || strcmp(first_word,"rts")!=0)){   
 
-            printf("%s: Error at row %d:Missing opernds in line \'%s\'\n",file_name_glob,rows++,line);
-            rows++;
-            continue;
-        }
-        
-        temp_num=command_sort(first_word,line,IC+100,rows,file_name);
+        /*--------------------------------Default--------------------------------------*/
+        default:
 
-        if(temp_num > 0){
-            IC+=temp_num;
-           
-            rows++;
-            continue;
+            break;
+        
         }
-        /*If there any error (witch represented with negative values) add it to error counter by making them positive*/
-        error_exist+=(temp_num*-1); 
-        rows++;
     }
     
     link_data_list();
@@ -151,7 +235,7 @@ int first_read(FILE* input_file,char* file_name){
 
     temp = label_list_head;
 
-    printf("\n\n");
+   /*printf("\n\n");
     while(temp!=NULL){
         printf("%s\t%s\t%s\n",temp->name,temp->type,temp->data);
         temp = temp->next;
@@ -162,7 +246,7 @@ int first_read(FILE* input_file,char* file_name){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
-    
+    */
     if(error_exist > 0) 
          return error_exist;
 
@@ -172,6 +256,7 @@ int first_read(FILE* input_file,char* file_name){
 }
 
 int define_var(char* line){
+
     char first_word[MAX_LINE_SIZE];
     char second_word[MAX_LINE_SIZE];
 
@@ -181,7 +266,7 @@ int define_var(char* line){
     /*-----------Validation check--------------*/
     label_validation_check(first_word);
     if(!is_number(second_word)){
-        printf("%s: Error at row %d:The value '%s' must be an integer number \n",file_name_glob,rows++,second_word);
+        printf("%s:%s at row %d:The value '%s' must be an integer number \n",file_name_glob,red_error,rows++,second_word);
         error_exist++;
     }
     /*-------Add variable to labels list---------*/
@@ -259,11 +344,11 @@ int add_data_node(char* name,char* line){
 
             if((line[i])==','){
                 if((i+1) == strlen(line)){
-                    printf("%s: Error at row %d: line: %s \nMissing argument after \',\' in data declaration",file_name_glob,rows,line);
+                    printf("%s: Error at row %d: line: %s \nMissing argument after \',\' in data declaration\n",file_name_glob,rows,line);
                     return 1;
                 }
                 if((line[i+1]==',')){
-                    printf("%s: Error at row %d: line: %s \nDubble \',\' char in data declaration",file_name_glob,rows,line);
+                    printf("%s: Error at row %d: line: %s \nDubble \',\' char in data declaration\n",file_name_glob,rows,line);
                     return 1;
                 }
                 if(is_number(word)){ /*If it's a number add him*/
@@ -322,14 +407,37 @@ int second_data_sort(){
                         sprintf(binary_temp->data,"0%s\t%s10",line,string_to_binary(label_temp->data,12));                  
             }
             else {
-                printf("%s: Error: Undefined Label:\'%s\'\n",file_name_glob,word);
+                if(command_number(word)>=0)
+                    printf("%s:%s:Missing arguments for:\'%s\'\n",file_name_glob,red_error,word);
+                else
+                    printf("%s:%s:Undefined Label:\'%s\'\n",file_name_glob,red_error,word);
                 error_exist++;
             }
         }
+        
+        if(binary_temp->type == 'i' && binary_temp->finished == 0){
+            sscanf(binary_temp->data, "0%s %s",line,word);
+            if((label_temp = in_data_list(word,2)) != NULL){
+                if(strcmp(label_temp->type,".extern")==0){
+                    sprintf(binary_temp->data,"0%s\t00000000000001",line);
+                    add_label(label_temp->name,".extern_use",line);
+                }
+                 
+                else if((label_temp = in_data_list(word,2)) != NULL)
+                        sprintf(binary_temp->data,"0%s\t%s10",line,string_to_binary(label_temp->data,12));                  
+            }
+            else {
+                
+                printf("%s:%s:Undefined index:\'%s\'\n",file_name_glob,red_error,word);
+                error_exist++;
+            }
+        }
+
         binary_temp = binary_temp->next;
     }
     
     label_temp = label_list_head;
+
     while (label_temp!=NULL)
     {
         if(strcmp(label_temp->type,".entry")==0){
@@ -434,7 +542,6 @@ int add_binary_line(char* data,char type, int finished){
             binary_output_curent = new_binary_line;
         }
     }
-    /*printf("Table:%s\t%c\t%d\n",new_binary_line->data,new_binary_line->type,new_binary_line->finished);*/
     return 0;
 }
 
@@ -449,25 +556,38 @@ label* in_data_list(char* name,int data_flag){
         if(strcmp(label_temp->name,name)==0){
             switch (data_flag)
             {
-            case 1:
-            if(strcmp(label_temp->type,"mdefine")==0 || strcmp(label_temp->type,".extern")==0){
-                return label_temp;
-            }
-            break;
+                case 0:/*Just find the name in list*/
+                    break;
+
+                case 1:/*Find only defined or extern variables*/
+                    if(strcmp(label_temp->type,"mdefine")==0 || strcmp(label_temp->type,".extern")==0){
+                        return label_temp;
+                    }
+                    break;
             
-            case 2:
-            if((strcmp(label_temp->type,".entry")==0 || strcmp(label_temp->type,"entry_use")==0)){
+                case 2:/*Skip entry and entry use labels*/
+                    if((strcmp(label_temp->type,".entry")==0 || strcmp(label_temp->type,"entry_use")==0)){
+                        label_temp = label_temp->next;
+                        continue;
+                    }
+                    break;
+
+                case 3:/*Find ONLY the entry and exten albels names*/
+                    if((strcmp(label_temp->type,".entry")==0) || (strcmp(label_temp->type,".extern")==0)){
+                        return label_temp;
+                    }
                     label_temp = label_temp->next;
                     continue;
-                }
-            break;
 
-            case 3:
-            if((strcmp(label_temp->type,".entry")==0)){
-                return label_temp;
-            }
-            default:
-                break;
+                case 4:/*Return only entry labels*/
+                    if(strcmp(label_temp->type,".entry")==0){
+                        label_temp = label_temp->next;
+                        continue;
+                    }
+                    break;
+
+                default:
+                    break;
             }
             return label_temp;
         }
@@ -480,22 +600,22 @@ int label_validation_check(char* name){
     switch(defenition_name_valid_check(name,label_list_head)){
 
         case 1:
-            printf("%s: Error at row %d: Multiple definitions of label '%s'\n",file_name_glob,rows++,name);
+            printf("%s:%s at row %d: Multiple definitions of label '%s'\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
 
         case 2:
-            printf("%s: Error at row %d: The label '%s' can't have a name of assembly command\n",file_name_glob,rows++,name);
+            printf("%s:%s at row %d: The label '%s' can't have a name of assembly command\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
 
         case 3:
-            printf("%s: Error at row %d: The label '%s' can't be a register name\n",file_name_glob,rows++,name);
+            printf("%s:%s at row %d: The label '%s' can't be a register name\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
 
         case 4:
-            printf("%s: Error at row %d: The label '%s' can't be a number\n",file_name_glob,rows++,name);
+            printf("%s:%s at row %d: The label '%s' can't be a number\n",file_name_glob,red_error,rows++,name);
             error_exist++;
             break;
         

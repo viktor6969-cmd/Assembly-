@@ -47,6 +47,7 @@ void free_labels_list();
 int make_command_list();
 void free_command_list();
 char* command_code(char* name);
+int command_number(char* name);
 int command_sort(char* name,char* line,int IC,int rows,char* file_name);
 
 /*-----------Write_file functions------------*/
