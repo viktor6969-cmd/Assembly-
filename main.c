@@ -8,8 +8,7 @@ int main(int argc, char *argv[]){
     int errors;
     FILE* file;
     char file_name[MAX_LINE_SIZE];
-
-    /*printf("\x1b[31m");*/
+    
     /*-------Arguments check----------*/
     if(argc < 2){
         print_error("Arguments missing! \nusage : ./assembly \"file1\" \"file2\" ...");
@@ -36,16 +35,15 @@ int main(int argc, char *argv[]){
             fclose(file);/*Close the original file.as*/
             file = fopen(file_name, "r");/*Open the new file.am, with all the macros*/
             if (file == NULL) {/*Check if the file exist*/
-                printf("\x1b[31mFailed to open file %s\x1b[0m\n", file_name);
+                printf("Failed to open file %s\n", file_name);
             return 1;
             }
         }
 
-        /*------------First file read---------------*/
+        /*------------REad the file---------------*/
         errors += first_read(file,argv[i]);
         if(errors > 0)
-            printf("\x1b[31mThere are %d errors in the sourcse file, outputile wasn't created\x1b[0m\n",errors);
-        /*compile_to_binary(macro_file);*/
+            printf("\x1b[31m\n \nFATAL:\x1b[0m %d errors found in the source file '%s'. Output files were not created.",errors,file_name);
         fclose(file);
     }
     free_command_list();

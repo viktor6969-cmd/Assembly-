@@ -32,6 +32,7 @@ char* char_to_binary(char ch);
 
 /*--------Validation_check functions--------*/
 int defenition_name_valid_check(char* first_word, label* list);
+int valid_data(char* word,char* file_name,int rows);
 void print_error(char* error_string);
 int is_number(char *str);
 int is_register(char* name);
@@ -47,10 +48,11 @@ void free_labels_list();
 int make_command_list();
 void free_command_list();
 char* command_code(char* name);
-int command_sort(char* name,char* line,int IC,int rows);
+int command_number(char* name);
+int command_sort(char* name,char* line,int IC,int rows,char* file_name);
 
 /*-----------Write_file functions------------*/
-int printf_binary_files(binary *binary_list,label *label_list,char* file_name); 
+int printf_binary_files(binary *binary_list,label *label_list,char* file_name,int IC,int DC); 
 
 
 

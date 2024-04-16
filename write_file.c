@@ -8,10 +8,10 @@ char* translate(char* line);
 char* weird_code(char* base4);
 
 /*-------------FUNCTIONS----------------*/
-int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
+int printf_binary_files(binary *binary_list,label *label_list,char* file_name,int IC,int DC){
 
-    char* string_temp = malloc(MAX_LABEL_NAME_SIZE*sizeof(char));
-    char* line = malloc(4*sizeof(char));
+    char* string_temp =(char*)calloc(MAX_LABEL_NAME_SIZE, sizeof(char));
+    char* line = (char*)calloc(4, sizeof(char));
     binary* binary_temp = binary_list;
     label* label_temp = label_list;
     FILE* binary_output = NULL;
@@ -25,8 +25,10 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name){
         return -1;
     }
 
+    fprintf(binary_output,"  %d\t%d\n",IC,DC);
     while(binary_temp!=NULL){
         sscanf(binary_temp->data,"%s %s",line,string_temp);
+        
         fprintf(binary_output,"%s\t%s\n",line,translate(string_temp));
         binary_temp = binary_temp->next;
     }
@@ -57,7 +59,7 @@ char* translate(char* binary) {
     int i;
     int val;
     int base4_len = 7; 
-    char* base4 = malloc(14*sizeof(char)); 
+    char* base4 = (char*)calloc(14, sizeof(char));
     char lookup[] = {'0', '1', '2', '3'};
     if (!base4) {
         printf("Memory allocation failed\n");
@@ -93,6 +95,5 @@ char* weird_code(char* base4) {
         weird[i] = mapping[digit];
     }
     weird[base4_len] = '\0'; 
-
     return weird;
 }

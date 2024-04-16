@@ -5,6 +5,8 @@
         "stdio.h": "c",
         "system_error": "c",
         "typeinfo": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "string.h": "c",
+        "cstdlib": "c"
     }
 }
