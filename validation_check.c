@@ -79,7 +79,7 @@ int valid_data(char* word,char* file_name,int rows){
     if((temp_lbl=in_data_list(word,1))!=NULL){ /*Check the labels list*/
         if(strcmp(temp_lbl->type,".extern")==0){
             printf("%s:%s:line %d:Can't use an extern variable '%s' as data input: \n",file_name,red_error_mess,rows,word);
-            return 1;
+            return -1;
             }
         sprintf(temp_str,"\t%s",num_to_binary(atoi(in_data_list(word,1)->data),14));
         add_binary_line(temp_str,'d',0);
