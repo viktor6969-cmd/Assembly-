@@ -237,7 +237,7 @@ int write_operand(int type,int IC,char* first){
         /*-------Is label--------*/
         temp=in_data_list(temp_second,0);
 
-        if(temp!=NULL){ /*af found, write the line*/
+        if(temp!=NULL){ /*if found, write the line*/
             sprintf(binary_line,"0%d\t%s00",IC++,string_to_binary(temp->data,12));
             add_binary_line(binary_line,'i',1);
             return 2;

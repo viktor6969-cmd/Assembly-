@@ -47,7 +47,7 @@ int first_read(FILE* input_file,char* file_name){
     while (fgets(line, sizeof(line), input_file)){ /*Go thrue the file, line by line*/
         
         rows ++;
-        /*printf("Command:'%s' rows:%d\n",line,rows);*/
+        /*printf("Command:'%s' rows:%d\n",line,error_exist);*/
         /*------------Skip all the comment amd empty lines--------------------*/
         if(line[0] == ';' || strcmp(line, "\n") == 0)
             continue;
@@ -195,7 +195,9 @@ int first_read(FILE* input_file,char* file_name){
             }        
             /*--------------Label defenition-------------------*/
             if((first_word[strlen(first_word)-1]) == ':'){
+                
                 label_def(first_word,line);
+               
                 continue;
             }
             /*------------------Command------------------------*/
@@ -234,7 +236,7 @@ int first_read(FILE* input_file,char* file_name){
 
     temp = label_list_head;
 
-   /*printf("\n\n");
+    printf("\n\n");
     while(temp!=NULL){
         printf("%s\t%s\t%s\n",temp->name,temp->type,temp->data);
         temp = temp->next;
@@ -245,7 +247,7 @@ int first_read(FILE* input_file,char* file_name){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
-    */
+    
     if(error_exist > 0) 
          return error_exist;
 
@@ -299,7 +301,7 @@ int label_def(char* name,char* line){
     sscanf(line, "%s", name);
     sscanf(line, "%*s %[^\n]", line);
     temp_num=command_sort(name,line,IC+100,rows,file_name_glob);
-    if(temp_num>0)
+    if(temp_num>=0)
         IC+=temp_num;
     else
         error_exist+=(temp_num*-1);
@@ -312,18 +314,23 @@ int add_string_node(char* name,char* line){
     char temp[MAX_BINARY_LINE_SIZE];
     sprintf(temp, "%d", DC);
     add_label(name,".string",temp);
-    for(i = 3;i<strlen(line)-3;i++){
+    if(line[0]=='\"' && line[strlen(line)-2]=='\"'){        
+        for(i = 1;i<strlen(line)-2;i++){
 
-        if((line[i] >= 'a' && line[i] <= 'z') || (line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= '0' && line[i] <= '9')){ 
-            
-            sprintf(temp,"\t%s",char_to_binary(line[i]));
-            add_binary_line(temp,'d',0);
-            continue;
+            if((line[i] >= 'a' && line[i] <= 'z') || (line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= '0' && line[i] <= '9') || line[i] == ' '){ 
+                sprintf(temp,"\t%s",char_to_binary(line[i]));
+                add_binary_line(temp,'d',0);
+                continue;
+            }
+            else{
+                printf("%s:%s:line %d:Invalid char in string input'%c' \n",file_name_glob,red_error,rows,line[i]);
+                error_exist ++;
+            }
         }
-        else{
-            printf("%s:%s:line %d:Invalid char in string input'%c' \n",file_name_glob,red_error,rows,line[i]);
-            error_exist ++;
-        }
+    }
+    else{
+        printf("%s:%s:line %d:String input must start and end with with \" char \n",file_name_glob,red_error,rows);
+        error_exist ++;
     }
     sprintf(temp,"\t%s",char_to_binary('\0'));
     add_binary_line(temp,'d',0);
@@ -344,22 +351,25 @@ int add_data_node(char* name,char* line){
             if((line[i])==','){
                 if((i+1) == strlen(line)){
                     printf("%s:%s:line %d:Missing argument after \',\' char in data declaration\n",file_name_glob,red_error,rows);
-                    return 1;
+                    error_exist++;
                 }
                 if((line[i+1]==',')){
                     printf("%s:%s:line %d: %s\nDubble \',\' char in data declaration\n",file_name_glob,red_error,rows,line);
-                    return 1;
+                   error_exist++;
                 }
-                error_exist+=valid_data(word,file_name_glob,rows); 
+                temp_num=valid_data(word,file_name_glob,rows); 
+                if(temp_num>=0)
+                    error_exist+=(temp_num*-1);
                 strcpy(word,"");
             }
             else
                 strncat(word,&line[i],1);
         }
 
-    /*Scan the last variable*/    
    
-    error_exist+=valid_data(word,file_name_glob,rows);
+    temp_num=valid_data(word,file_name_glob,rows); 
+    if(temp_num>=0)
+        error_exist+=(temp_num*-1);
     return 0;
 }
 
