@@ -5,17 +5,19 @@
 int main(int argc, char *argv[]){
 
     int i;
-    int errors;
-    FILE* file;
-    char file_name[MAX_LINE_SIZE];
+    int errors; /*Errors counter*/
+    FILE* file; /*Curent file pointer*/
+    char file_name[MAX_LINE_SIZE];/*File Name string*/
     
     /*-------Arguments check----------*/
     if(argc < 2){
-        print_error("Arguments missing! \nusage : ./assembly \"file1\" \"file2\" ...");
+        printf("Arguments missing! \nusage : ./assembly \"file1\" \"file2\" ...");
         return 1;
     }
 
-    make_command_list(); /*Make a list of commands*/
+    /*Make a list of commands*/
+    make_command_list();
+
     /*--------Go file by file---------*/
     for(i=1;i<argc;i++){
 
@@ -30,6 +32,7 @@ int main(int argc, char *argv[]){
 
 
         /*-------------Deploy Macros----------------*/
+        /*Go line by line, if there any macros, create a new .am file, and open the macros within*/
         if(open_macros(argv[i])){/*Precompile function, returns 1 if file.am was made*/
             sprintf(file_name,"%s.am",argv[i]);/*Change the name from file.as to file .am*/
             fclose(file);/*Close the original file.as*/
@@ -41,11 +44,14 @@ int main(int argc, char *argv[]){
         }
 
         /*------------REad the file---------------*/
+        /*Read and translate the file, if any errors, dont create new files, 
+        just print a message and go to next file*/
         errors += first_read(file,argv[i]);
         if(errors > 0)
             printf("\x1b[31m\n \nFATAL:\x1b[0m %d errors found in the source file '%s'. Output files were not created.",errors,file_name);
         fclose(file);
     }
+    /*Clean the memory allocated to commands list*/
     free_command_list();
     return 0;
 }

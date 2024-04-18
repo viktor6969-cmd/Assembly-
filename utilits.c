@@ -3,8 +3,13 @@
 #include <string.h>
 #include "header.h"
 
-
+/*Convert string number to string binary*/
 char* string_to_binary(char* str, int num_bits){
+
+    /*Gets as input: a number, represented as string and number of bits to write
+    return: a string in length of 'bits' witch is binary representetion of the number,
+    all the missing bits are represented as '0' */
+
     char *binary_str = (char *)malloc((num_bits + 1) * sizeof(char));
     int num;
     int i;
@@ -27,7 +32,12 @@ char* string_to_binary(char* str, int num_bits){
     return binary_str;
 }
 
+/*Convert integer to binary string*/
 char* num_to_binary(int number, int bits){
+
+    /*Gets an ineger and number of bits, and return a string representation of the number,
+    in length of given bits, the extra bits replaced with '0'*/
+
     int i;
     char* binary = (char*)malloc(bits + 1); /* The +1 is for the null terminator*/
 
@@ -39,7 +49,11 @@ char* num_to_binary(int number, int bits){
     return binary; 
 }
 
+/*Convert char to binary string of aski representation*/
 char* char_to_binary(char ch){
+
+    /*Gets a char, and return a 14 chars srting, with the aski code of the char */
+    
     int i;
     int ascii = (int)ch; 
     char *binary = (char *)malloc(15); 
@@ -56,8 +70,4 @@ char* char_to_binary(char ch){
     }
 
     return binary;
-}
-
-void print_error(char* error){
-    printf("\x1b[31m%s \x1b[0m",error);
 }
