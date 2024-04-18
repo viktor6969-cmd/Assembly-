@@ -7,11 +7,21 @@
 /*------------DECLARATIONS--------------*/
 int is_register(char* name);
 
+/*----------GLOBAL VARIABLES------------*/
 char* red_error_mess = "\x1b[31m ERROR\033[0m";
 
 /*--------------Functions---------------*/
+
 int defenition_name_valid_check(char* name,label* label_head){
 
+    /*Gets a name of a label, and pointer to labels list head, returns number as indicator:
+    1-The name is already in the list
+    2-Is command name
+    3-Is register
+    4-Is number
+    5-The name is .extern label
+    6-The name is .entry label*/
+    
     label* label_temp;/*A pointer to run on all the linked label list*/
     label_temp = label_head;
 
@@ -36,23 +46,24 @@ int defenition_name_valid_check(char* name,label* label_head){
     if(is_register(name))
         return 3;
 
+    /*------------Cheak if number-------------*/
     if(is_number(name))
         return 4;
         
     return 0;
 }
 
-int operands_valid(char* line,int op_num){
-
-
-    return 0;
-}
-
 int is_register(char* name){
+
+    /*Gets a string, and return '1' if it's a register, and '0' if not*/
+
    return((name[0]=='r')&&(name[1] >= '0' && name[1] <= '8')&&(strlen(name)==2));
 }
 
 int is_number(char *str) {
+
+    /*Gets a string is an imput, return 1 if the string is a number, and 0 if not*/
+
     if (str == NULL || *str == '\0') 
         return 0; 
     if (*str == '-') 
@@ -77,10 +88,11 @@ int valid_data(char* word,char* file_name,int rows){
         return 1;
     }
     if((temp_lbl=in_data_list(word,1))!=NULL){ /*Check the labels list*/
-        if(strcmp(temp_lbl->type,".extern")==0){
+        if(strcmp(temp_lbl->type,".extern")==0){/*If exist, print an error and return -1*/
             printf("%s:%s:line %d:Can't use an extern variable '%s' as data input: \n",file_name,red_error_mess,rows,word);
             return -1;
             }
+        /*If the label new, convert the data binary and add him.*/
         sprintf(temp_str,"\t%s",num_to_binary(atoi(in_data_list(word,1)->data),14));
         add_binary_line(temp_str,'d',0);
         strcpy(word,"");

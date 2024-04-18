@@ -12,12 +12,13 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name,in
 
     char* string_temp =(char*)calloc(MAX_LABEL_NAME_SIZE, sizeof(char));
     char* line = (char*)calloc(4, sizeof(char));
-    binary* binary_temp = binary_list;
-    label* label_temp = label_list;
+    binary* binary_temp = binary_list;/*The head of binary command list*/
+    label* label_temp = label_list;/*The head of labels list*/
     FILE* binary_output = NULL;
     FILE* extern_output = NULL;
     FILE* entry_output = NULL;
 
+    /*Create the output .ob file */
     sprintf(string_temp,"%s.ob",file_name);
     binary_output = fopen(string_temp,"w");
     if(binary_output==NULL){
@@ -25,7 +26,10 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name,in
         return -1;
     }
 
+    /*Put the number of command and  data rows in the heads of the file*/
     fprintf(binary_output,"  %d\t%d\n",IC,DC);
+
+    /*Print the command list line by line*/
     while(binary_temp!=NULL){
         sscanf(binary_temp->data,"%s %s",line,string_temp);
         
@@ -35,6 +39,7 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name,in
 
     while (label_temp!=NULL)
     {
+        /*Go thrue the Labels list, create and write .ext and .ent files if needed*/
         if(strcmp(label_temp->type,".extern_use")==0){
             sprintf(string_temp,"%s.ext",file_name);
             extern_output = fopen(string_temp,"a");
@@ -54,6 +59,7 @@ int printf_binary_files(binary *binary_list,label *label_list,char* file_name,in
     return 0;
 }
 
+/*Tranclate the binary line to base 4 line*/
 char* translate(char* binary) {
 
     int i;
@@ -74,6 +80,7 @@ char* translate(char* binary) {
     return weird_code(base4);
 }
 
+/*Translate the base 4 line to the weird *%#! code*/
 char* weird_code(char* base4) {
     int i;
     int digit;
