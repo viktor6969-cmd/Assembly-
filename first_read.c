@@ -226,8 +226,9 @@ int first_read(FILE* input_file,char* file_name){
     
     link_data_list();
 
-    error_exist = second_data_sort();
-
+     
+    error_exist += second_data_sort();
+  
     /* Connect data nodes to the end of command nodes */
         if (binary_data_head != NULL) {
             binary_output_curent->next = binary_data_head;
@@ -236,7 +237,7 @@ int first_read(FILE* input_file,char* file_name){
 
     temp = label_list_head;
 
-    printf("\n\n");
+    /*printf("\n\n");
     while(temp!=NULL){
         printf("%s\t%s\t%s\n",temp->name,temp->type,temp->data);
         temp = temp->next;
@@ -247,11 +248,13 @@ int first_read(FILE* input_file,char* file_name){
         printf("%s\t%c\t%d\n",binary_output_head->data,binary_output_head->type,binary_output_head->finished);
         binary_output_head = binary_output_head->next;
     }
-    
+    */
+   
     if(error_exist > 0) 
          return error_exist;
 
     printf_binary_files(binary_output_head,label_list_head,file_name,IC,DC);
+
     free_labels_list();
     return 0;
 }
@@ -358,7 +361,7 @@ int add_data_node(char* name,char* line){
                    error_exist++;
                 }
                 temp_num=valid_data(word,file_name_glob,rows); 
-                if(temp_num>=0)
+                if(temp_num<0)
                     error_exist+=(temp_num*-1);
                 strcpy(word,"");
             }
@@ -368,7 +371,7 @@ int add_data_node(char* name,char* line){
 
    
     temp_num=valid_data(word,file_name_glob,rows); 
-    if(temp_num>=0)
+    if(temp_num<0)
         error_exist+=(temp_num*-1);
     return 0;
 }
@@ -398,6 +401,8 @@ int second_data_sort(){
             else {
                 if(command_number(word)>=0)
                     printf("%s:%s:Missing arguments for:\'%s\'\n",file_name_glob,red_error,word);
+           
+              
                 else
                     printf("%s:%s:Undefined Label:\'%s\'\n",file_name_glob,red_error,word);
                 error_exist++;
@@ -416,7 +421,6 @@ int second_data_sort(){
                         sprintf(binary_temp->data,"0%s\t%s10",line,string_to_binary(label_temp->data,12));                  
             }
             else {
-                
                 printf("%s:%s:Undefined index:\'%s\'\n",file_name_glob,red_error,word);
                 error_exist++;
             }
@@ -437,9 +441,7 @@ int second_data_sort(){
         }
         label_temp = label_temp->next;
     }
-    
-
-    return error_exist;
+    return 0;
 }
 
 int link_data_list(){

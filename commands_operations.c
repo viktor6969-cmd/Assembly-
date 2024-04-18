@@ -208,7 +208,7 @@ int write_operand(int type,int IC,char* first){
 
         /*If the Label name exist in Data list*/
         if(temp!=NULL){
-            sprintf(temp_first,string_to_binary(temp->data,12));
+            sprintf(temp_first,"%s",string_to_binary(temp->data,12));
             is_found = 1;
         }
         else
